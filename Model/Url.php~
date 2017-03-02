@@ -32,6 +32,10 @@ class Url
      */
     const VAR_PUNCT			= '.';
     const VAR_COLUMN			= ':';
+    const VAR_SLASH			= '/';
+    const VAR_PATH_ABEMPTY		= '//';
+    const VAR_INTERROGATION		= '?';
+    const VAR_DIESE			= '#';
 
     /**
      *
@@ -39,10 +43,17 @@ class Url
     const REGEXP_SCHEME_PROTOCOL	= "(?<scheme>[a-z0-9*]*)";
     const REGEXP_SCHEME_COLUMN  	= "[:]{0,1}";
     const REGEXP_SCHEME_PATH_ABEMPTY 	= "\/\/";
+    const REGEXP_SLASH			= "\/";
     const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^\/.]+[.])*)[^\/.]+)[.]){0,1})";
     const REGEXP_HOST_DOMAIN		= "(?<domain>[^.\/]{3,})";
     const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
     const REGEXP_HOST_IPV4		= "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+    const REGEXP_PATH_FOLDER		= "(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})";
+    const REGEXP_PATH_FILENAME		= "(?<filename>[^?\/]+)";
+    const REGEXP_PATH_FILENAME_EXTENSION= "(?<filenameExtension>[^?]*)";
+    const REGEXP_QUERY			= "([?](?<query>[^#]*))?";
+    const REGEXP_FRAGMENT		= "([#](?<fragment>.*))?";
+
     /**
      * Scheme component of the URI.
      *
@@ -52,12 +63,24 @@ class Url
     private $scheme;
       
     /** 
-     * @todo 
+     * Folder component of the URI.
+     * 
+     * The folder is the first part of the path section.
+     *
+     * @var string Folder component
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
      */    
     private $folder;
     
     /** 
-     * @todo 
+     * Query component of the URI
+     *
+     * The query is a set of key/value data
+     *
+     * @var string Query component
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.4
      */
     private $query;
     
@@ -96,22 +119,40 @@ class Url
     private $topLevelDomain;
     
     /**
-     * @todo
+     * Filename component of the URL
+     *
+     * The filename is part of path section.
+     *
+     * @var string Part component
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
      */
     private $filename;
     
     /**
-     * @todo
+     * Filename extension component of the URL
+     * 
+     * The filename extension is part of path section.
+     * 
+     * @var string File extension component
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
      */
     private $filenameExtension;
     
     /**
      * Port of the URL
+     * 
+     * @var int|null Port component
      */
     private $port;
     
     /**
-     * @todo
+     * Fragment of the URL
+     *
+     * @var string Fragment component
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.5
      */
     private $fragment;
     
@@ -127,6 +168,8 @@ class Url
     
     /**
      * port mode
+     *
+     * @var string|null Port mode
      */
     private static $port_mode;
 
@@ -346,6 +389,282 @@ class Url
 	);
     }
 
+    /**
+     * Retrieve the path component of the URL.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
+     * @return string The URL path.
+     */
+    public function getPath()
+    {
+	$path = $this->folder;
+
+    	if( (null !== $this->folder) && (null !== $this->filename) )
+		$path.=self::VAR_SLASH;
+       
+	if(null !== $this->filename)
+		$path.=$this->filename;
+
+	if(null !== $this->filenameExtension)
+		$path.=self::VAR_PUNCT.$this->filenameExtension;
+    	
+	return $path;
+    }
+
+    /**
+     * Set the path component of the URL.
+     *
+     * The path can either be empty or absolute (starting with a slash) or
+     * rootless (not starting with a slash). Implementations support all
+     * three syntaxes.
+     *
+     * Normally, the empty path "" and absolute path "/" are considered equal as
+     * defined in RFC 7230 Section 2.7.3. But this method is not automatically
+     * do this normalization because in contexts with a trimmed base path, e.g.
+     * the front controller, this difference becomes significant. It's the task
+     * of the user to handle both "" and "/".
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.3.
+     *
+     * As an example, if the value should include a slash ("/") not intended as
+     * delimiter between path segments, that value MUST be passed in encoded
+     * form (e.g., "%2F") to the instance.
+     *
+     * @param string $path Path 
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
+     */
+    public function setPath($path)
+    {
+	$this->folder 		= null;
+	$this->filename  	= null;
+	$this->filenameExtension= null;
+
+        $regexp = $this->getPathRegexp('rootless');
+	
+	// is empty ?
+	if(empty($path))
+	{
+		return;
+	}
+
+	// is a valid path ?	
+	if(preg_match($regexp,$path,$matches))
+	{
+		if(!empty($matches['folder']))
+		{
+			$this->folder = $matches['folder'];
+		}
+		
+		if(!empty($matches['filename']))
+		{
+			$data = explode('.',$matches['filename']);
+			// is extension exists ?			
+			if(count($data)>1 && !empty($data[0]))
+			{
+				$last_position 		= count($data)-1;
+				$this->filenameExtension= $data[$last_position];
+				unset($data[$last_position]);
+				$this->filename		= implode('.',$data);	
+			}
+			else
+				$this->filename = $matches['filename'];
+		}
+		return;
+	}
+
+	throw new InvalidUrlException(
+		InvalidUrlException::INVALID_PATH_MESSAGE,
+		InvalidUrlException::INVALID_PATH_CODE,
+		array('name' => $path)
+	);
+    }
+
+    /**
+     * Retrieve the query string of the URI.
+     *
+     * If no query string is present, this method MUST return an empty string.
+     *
+     * The leading "?" character is not part of the query and MUST NOT be
+     * added.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.4
+     * @return string The URI query string.
+     */
+    public function getQuery()
+    {
+	if(null === $this->query)
+		return "";
+
+	return $this->query;
+    }
+    /**
+     * Set the query string of the URI.
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.4.
+     *
+     * As an example, if a value in a key/value pair of the query string should
+     * include an ampersand ("&") not intended as a delimiter between values,
+     * that value MUST be passed in encoded form (e.g., "%26") to the instance.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.4
+     */
+    public function setQuery($query)
+    {
+	$this->query = null;
+
+	if(empty($query))
+		return;
+
+	$this->query = $query;
+    }
+
+    /**
+     * Retrieve the fragment component of the URL.
+     *
+     * If no fragment is present, this method MUST return an empty string.
+     *
+     * The leading "#" character is not part of the fragment and MUST NOT be
+     * added.
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.5.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.5
+     * @return string The URL fragment.
+     */
+    public function getFragment()
+    {
+	if(null === $this->fragment)
+		return "";
+
+	return $this->fragment;
+    }
+
+    /**
+     * Set the fragment component of the URI.
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.5.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.5
+     */
+    public function setFragment($fragment)
+    {
+	$this->fragment = null;
+	
+	if(empty($fragment))
+		return;
+	
+	$this->fragment = $fragment;
+    }
+
+    /**
+     * Retrieve the authority component of the URL.
+     *
+     * If no authority information is present, this method MUST return an empty
+     * string.
+     *
+     * The authority syntax of the URL is:
+     *
+     * <pre>
+     * [user-info@]host[:port]
+     * </pre>
+     *
+     * If the port component is not set or is the standard port for the current
+     * scheme, it SHOULD NOT be included.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2
+     * @return string The URI authority, in "[user-info@]host[:port]" format.
+     */
+    public function getAuthority()
+    {
+	$authority = $this->getHost();
+	if(null !== $this->port)
+	{
+		$authority.=self::VAR_COLUMN.$this->port;
+	}
+	return $authority;
+    }
+
+    /**
+     * Retrieve the keys from the query
+     *
+     * @return array|null list of query keys
+     */
+    public function getQueryParameterKeys()
+    {
+	$tab = self::queryToArray($this->query);
+        if(count($tab))
+		return array_keys($tab);
+	return null;
+    }
+   
+    /**
+     * Query conversion to array
+     * 
+     * @param string $query Query
+     * @return array 
+     */
+    private static function queryToArray($query)
+    {
+	$tab	= array();
+	$items	= explode('&', $query);
+	if(count($items))
+	{
+		foreach($items as $item)
+		{
+			$tmp = explode('=',$item);
+			
+			if(count($tmp) === 2)
+				$tab[$tmp[0]]=$tmp[1];
+			elseif(count($tmp) === 1)
+				$tab[$tmp[0]]="";
+		}
+	}
+	asort($tab);
+	return $tab;
+    }
+    /**
+     * Retrieve the value from a key
+     *
+     * If no key found in the query, the method return NULL
+     *
+     * @param string $key Key from query
+     * @return string value
+     */
+    public function getQueryParameter($key)
+    {
+	$query  = $this->getQuery();
+	$items	= explode('&', $query);
+	foreach($items as $item)
+	{
+		$tmp = explode('=',$item);
+		if(count($tmp) === 2)
+		{
+			if($tmp[0] == $key)
+				return $tmp[1];
+		}	
+		elseif(count($tmp) === 1)
+		{
+			if($item == $key)
+				return "";
+		}
+	}
+	return null;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////
     //											//
     //				SPECIFIC METHODS					//
@@ -388,6 +707,11 @@ class Url
 	$this->domain		= null;
 	$this->topLevelDomain	= null;
 	$this->port		= null;
+	$this->folder 		= null;
+	$this->filename  	= null;
+	$this->filenameExtension= null;
+	$this->query		= null;
+	$this->fragment		= null;
     }
     
     /**
@@ -400,6 +724,28 @@ class Url
         return "/^".$str."$/i";
     }
     
+    /**
+     * @param  enum $option mode of regexp path building
+     *         - rootless	: regexp without slash at begin
+     *         - absolute	: regexp with slash at begin 
+     *
+     * @return string the regexp path validation
+     */
+    private function getPathRegexp($option = "absolute")
+    {
+	switch($option)
+	{
+		case 'rootless':
+			$regexp = "(".self::REGEXP_PATH_FOLDER.self::REGEXP_PATH_FILENAME."|\/|)";
+			return $regexp;
+			break;	
+		case 'absolute':
+		default:
+			$regexp = "(".self::REGEXP_SLASH.self::REGEXP_PATH_FOLDER.self::REGEXP_PATH_FILENAME."|\/|)";
+			return $regexp;	
+	}
+    }
+
     /**
      * @param  enum $option mode of regexp host building
      *         - dns		: regexp with dns requirements
@@ -449,6 +795,118 @@ class Url
 	}
 	return self::formatRegexp($scheme_regexp);
     }
+
+    /**
+     * Get Url without query nor fragment
+     *
+     * @return string Url component
+     */
+    public function getUrlWithoutQueryNorFragment()
+    {
+	$strict_url = $this->getScheme().
+			self::VAR_PATH_ABEMPTY.
+			$this->getAuthority().
+			self::VAR_SLASH.
+			$this->getPath();
+	return $strict_url;
+    }
+
+    /**
+     * Check if the url given is equivalent to the target url
+     *
+     * @param string $url Url to compare with current instance 
+     * @return boolean
+     */
+    public function isEquals($url)
+    {
+	// isolate the fragment section
+	$strict_url  	= null;
+	$strict_query	= null;
+	$strict_fragment= null;
+	
+	$tmp = explode('#',$url);
+	if(count($tmp) === 2)
+	{
+		$strict_fragment= $tmp[1];
+		$strict_url	= $tmp[0];
+	}
+	elseif(count($tmp) === 1)
+	{
+		$strict_url	= $url;
+	}
+	else
+	{
+		return false;
+	}
+
+	$tmp = explode('?',$strict_url);
+	if(count($tmp) === 2)
+	{
+		$strict_query	= $tmp[1];
+		$strict_url	= $tmp[0];
+	}
+	elseif(count($tmp) > 2)
+	{
+		return false;
+	}
+	
+	// is target strict url is equals to current strict url ?
+	$my_url = $this->getUrlWithoutQueryNorFragment();
+	if($my_url != $strict_url)
+	{
+		return false;
+  	}
+	
+	// is target fragment is equals to current fragment ?
+	$my_fragment = $this->getFragment();	
+	if($my_fragment != $strict_fragment)
+	{
+		return false;
+	}
+	
+	// is target query is equals to current query ?
+	$array_source = self::queryToArray($this->getQuery());
+	$array_target = self::queryToArray($strict_query);
+		
+	return ($array_source == $array_target);
+    }
+
+    /**
+     * Return the string representation as a URL reference.
+     *
+     * Depending on which components of the URL are present, the resulting
+     * string is either a full URI or relative reference according to RFC 3986,
+     * Section 4.1. The method concatenates the various components of the URI,
+     * using the appropriate delimiters:
+     *
+     * - If a scheme is present, it will be suffixed by ":".
+     * - If an authority is present, it will be prefixed by "//".
+     * - The path can be concatenated without delimiters. But there are two
+     *   cases where the path has to be adjusted to make the URI reference
+     *   valid as PHP does not allow to throw an exception in __toString():
+     *     - If the path is rootless and an authority is present, the path will
+     *       be prefixed by "/".
+     *     - If the path is starting with more than one "/" and no authority is
+     *       present, the starting slashes MUST be reduced to one.
+     * - If a query is present, it will be prefixed by "?".
+     * - If a fragment is present, it will be prefixed by "#".
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-4.1
+     * @return string
+     */
+    public function __toString()
+    {
+	$url = $this->getUrlWithoutQueryNorFragment();
+	if($this->getQuery())
+	{
+		$url.=self::VAR_INTERROGATION.$this->getQuery();
+	}
+	if($this->getFragment())
+	{
+		$url.=self::VAR_DIESE.$this->getFragment();
+	}
+	return $url;
+    }
     ///////////////////////////////// refactoring ////////////////////////////////////////
     const SCHEME_DEFAULT		= "http";
     const PORT_DEFAULT			= 80;
@@ -462,8 +920,6 @@ class Url
     const REGEXP_HOST			= "((?<subdomain>(([^\/.]+[.])*)[^\/.]+[.]){0,1})(?<domain>[^.\/]{3,})([.](?<domainExtension>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
     const REGEXP_PORT			= "([:](?<port>\d+))?";
     const REGEXP_PATH			= "(\/(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})(?<filename>[^?.\/]+)([.\/]{0,1})(?<filenameExtension>[a-z0-9\.]*)|\/|)";
-    const REGEXP_QUERY			= "([?](?<query>[^#]*))?";
-    const REGEXP_FRAGMENT		= "([#](?<fragment>.*))?";
     const REGEXP_REST			= "(?<rest>.*)";
 
     
@@ -492,20 +948,6 @@ class Url
     }
 
     
-    /**
-     * Init the current object
-     */
-    public function init()
-    {
-	$this->scheme		= null;
-	$this->query		= null;
-	$this->fragment		= null;
-	$this->subdomain	= null;
-	$this->domain		= null;
-	$this->domainExtension	= null;
-	$this->port		= null;
-	$this->initPath();
-    }
 
     /**
      * init path
@@ -558,7 +1000,6 @@ class Url
     public function load($url=null)
     {
 		
-		$this->init();
 
 		if(null === $url)
 		{
@@ -607,36 +1048,6 @@ class Url
 
 	}    
 	
-    
-
-    /**
-     * Retrieve the authority component of the URI.
-     *
-     * If no authority information is present, this method MUST return an empty
-     * string.
-     *
-     * The authority syntax of the URI is:
-     *
-     * <pre>
-     * [user-info@]host[:port]
-     * </pre>
-     *
-     * If the port component is not set or is the standard port for the current
-     * scheme, it SHOULD NOT be included.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.2
-     * @return string The URI authority, in "[user-info@]host[:port]" format.
-     */
-    public function getAuthority()
-    {
-	$authority = $this->getHost();
-
-	if(null !== $this->port)
-		$authority.=self::POST_SCHEME_TAG.(string)$this->port;
-
-	return $authority;
-    }
-
     /**
      * Retrieve the user information component of the URI.
      *
@@ -658,92 +1069,7 @@ class Url
 
 
 
-    /**
-     * Retrieve the path component of the URL.
-     *
-     * The path can either be empty or absolute (starting with a slash) or
-     * rootless (not starting with a slash). Implementations MUST support all
-     * three syntaxes.
-     *
-     * Normally, the empty path "" and absolute path "/" are considered equal as
-     * defined in RFC 7230 Section 2.7.3. But this method MUST NOT automatically
-     * do this normalization because in contexts with a trimmed base path, e.g.
-     * the front controller, this difference becomes significant. It's the task
-     * of the user to handle both "" and "/".
-     *
-     * The value returned MUST be percent-encoded, but MUST NOT double-encode
-     * any characters. To determine what characters to encode, please refer to
-     * RFC 3986, Sections 2 and 3.3.
-     *
-     * As an example, if the value should include a slash ("/") not intended as
-     * delimiter between path segments, that value MUST be passed in encoded
-     * form (e.g., "%2F") to the instance.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-2
-     * @see https://tools.ietf.org/html/rfc3986#section-3.3
-     * @return string The URL path.
-     */
-    public function getPath()
-    {
-	$path = $this->folder;
-	
-    	if( (null !== $this->folder) && (null !== $this->filename) )
-		$path.=self::PATH_ABSOLUTE;
-       
-	if(null !== $this->filename)
-		$path.=$this->filename;
 
-	if(null !== $this->filenameExtension)
-		$path.=self::POST_FILENAME_TAG.$this->filenameExtension;
-    	
-	return $path;
-    }
-
-    /**
-     * Retrieve the query string of the URI.
-     *
-     * If no query string is present, this method MUST return an empty string.
-     *
-     * The leading "?" character is not part of the query and MUST NOT be
-     * added.
-     *
-     * The value returned MUST be percent-encoded, but MUST NOT double-encode
-     * any characters. To determine what characters to encode, please refer to
-     * RFC 3986, Sections 2 and 3.4.
-     *
-     * As an example, if a value in a key/value pair of the query string should
-     * include an ampersand ("&") not intended as a delimiter between values,
-     * that value MUST be passed in encoded form (e.g., "%26") to the instance.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-2
-     * @see https://tools.ietf.org/html/rfc3986#section-3.4
-     * @return string The URI query string.
-     */
-    public function getQuery()
-    {
-	return $this->query;
-    }
-
-    /**
-     * Retrieve the fragment component of the URI.
-     *
-     * If no fragment is present, this method MUST return an empty string.
-     *
-     * The leading "#" character is not part of the fragment and MUST NOT be
-     * added.
-     *
-     * The value returned MUST be percent-encoded, but MUST NOT double-encode
-     * any characters. To determine what characters to encode, please refer to
-     * RFC 3986, Sections 2 and 3.5.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-2
-     * @see https://tools.ietf.org/html/rfc3986#section-3.5
-     * @return string The URI fragment.
-     */
-    public function getFragment()
-    {
-	return $this->fragment;
-    }
 
     /**
      * Return an instance with the specified scheme.
@@ -955,50 +1281,7 @@ class Url
     {
     }
 
-    /**
-     * Return the string representation as a URI reference.
-     *
-     * Depending on which components of the URI are present, the resulting
-     * string is either a full URI or relative reference according to RFC 3986,
-     * Section 4.1. The method concatenates the various components of the URI,
-     * using the appropriate delimiters:
-     *
-     * - If a scheme is present, it MUST be suffixed by ":".
-     * - If an authority is present, it MUST be prefixed by "//".
-     * - The path can be concatenated without delimiters. But there are two
-     *   cases where the path has to be adjusted to make the URI reference
-     *   valid as PHP does not allow to throw an exception in __toString():
-     *     - If the path is rootless and an authority is present, the path MUST
-     *       be prefixed by "/".
-     *     - If the path is starting with more than one "/" and no authority is
-     *       present, the starting slashes MUST be reduced to one.
-     * - If a query is present, it MUST be prefixed by "?".
-     * - If a fragment is present, it MUST be prefixed by "#".
-     *
-     * @see http://tools.ietf.org/html/rfc3986#section-4.1
-     * @return string
-     */
-    public function __toString()
-    {
-
-	$url = $this->getScheme().self::POST_SCHEME_TAG;
-	
-	if(null !== $this->getAuthority())
-		$url.= self::AUTHORITY_PATH_ABEMPTY . $this->getAuthority();
-	
-	if(null !== $this->getPath())
-		$url.= self::PATH_ABSOLUTE.$this->getPath();
-	elseif(null !== $this->getAuthority())
-		$url.= self::PATH_ABSOLUTE;
-	
-	if(null !== $this->getQuery())
-		$url.= self::PRE_QUERY_TAG.$this->getQuery();
-	
-        if(null !== $this->getFragment())
-		$url.= self::PRE_FRAGMENT.$this->getFragment();
-	
-	return $url;
-    }
+    
 
 }
 

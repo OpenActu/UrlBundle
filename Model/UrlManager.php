@@ -130,6 +130,79 @@ class UrlManager
 			$this->errors->add($e->getMessage(),$e->getCode());
 		}
         }
+
+	/**
+	 * Retrieve current Path
+         * @return string|null path
+         */
+	
+	public function getPath()
+	{
+		return $this->url->getPath();
+	}
+
+        /**
+         * set current path
+         * @param string $path Path
+         * @throws InvalidUrlException if the path is invalid (only with level_exception at "ERROR")
+         */
+        public function setPath($path)
+	{
+		try
+		{
+			$this->url->setPath($path);
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+
+	}
+	
+	/**
+  	 * get fragment
+         * 
+         * @return string Fragment
+ 	 */
+	public function getFragment()
+	{
+		return $this->url->getFragment();
+	}
+
+	/**
+	 * set fragment
+	 *
+	 * @param string $fragment fragment component
+	 */
+	public function setFragment($fragment)
+	{
+		$this->url->setFragment($fragment);
+	}
+
+	/**
+	 * get query
+	 *
+         * @return string Query
+         */
+        public function getQuery()
+	{
+		return $this->url->getQuery();
+	}
+
+	/**
+	 * set query
+	 * 
+	 * The query is a set of key/value separated by "&" and associated by "=" between them. In case of we
+	 * have a part of keys without value, we consider that theses keys exist and are equals to "".
+         *
+	 * For example, the queries "now=here&right=left" and "now=&right=left" are valid.
+	 * 
+         * @param string $query
+     	 */
+        public function setQuery($query)
+        {
+		$this->url->setQuery($query);
+        }
 	/**
 	 * construct declaration
          */
@@ -183,15 +256,18 @@ class UrlManager
 	}
 
 	/**
-         * @var string
-         * 
-         * @return string
-         * sanitize url and return the well-formed string in case of problem
+	 * Check if the url given is equivalent to the target url
+ 	 *
+         * @param string $url Url to compare with current instance 
+         * @return boolean
          */  
-        public function sanitizeUrl($url)
+        public function isEquals($url)
         {
-		/**
-		 * @todo
- 		 */
+		return $this->url->isEquals($url);
         }
+	
+	public function __toString()
+	{
+		return (string)$this->url;
+	}
 }

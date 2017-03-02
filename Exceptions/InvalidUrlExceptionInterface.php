@@ -15,4 +15,6 @@ interface InvalidUrlExceptionInterface
 	const INVALID_PORT_FORMAT_CODE		= 408;
         const INVALID_PORT_MODE_DEFINED_MESSAGE = 'invalid port mode defined (given "%name%")';
 	const INVALID_PORT_MODE_DEFINED_CODE	= 409;
+        const INVALID_PATH_MESSAGE		= 'the current path is invalid (given "%name%")';
+	const INVALID_PATH_CODE			= 410;
 }

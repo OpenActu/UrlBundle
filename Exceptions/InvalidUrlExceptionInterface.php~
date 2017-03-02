@@ -13,4 +13,6 @@ interface InvalidUrlExceptionInterface
 	const NO_HOST_FOUND_CODE		= 407;
 	const INVALID_PORT_FORMAT_MESSAGE	= 'the current port is invalid (given "%name%")';
 	const INVALID_PORT_FORMAT_CODE		= 408;
+        const INVALID_PORT_MODE_DEFINED_MESSAGE = 'invalid port mode defined (given "%name%")';
+	const INVALID_PORT_MODE_DEFINED_CODE	= 409;
 }
