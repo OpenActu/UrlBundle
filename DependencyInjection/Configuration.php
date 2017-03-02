@@ -21,24 +21,36 @@ class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('open_actu_url');
 	$rootNode
-		->children()
-			->arrayNode('url')
-				->children()			
-					->arrayNode('schemes')
-						->prototype('scalar')->end()
-					->end()
-                                        ->enumNode('level_exception')
-						->values(
-							array(
-								UrlManager::LEVEL_EXCEPTION_INFO,
-								UrlManager::LEVEL_EXCEPTION_ERROR
-							)
-						)
-						->defaultValue(UrlManager::LEVEL_EXCEPTION_INFO)
-					->end()
-				->end()
+          ->children()
+            ->arrayNode('url')
+              ->children()			
+                ->arrayNode('schemes')
+		  ->isRequired()
+                  ->prototype('scalar')->end()
+                ->end()
+                ->enumNode('level_exception')
+                  ->values(array(UrlManager::LEVEL_EXCEPTION_INFO,UrlManager::LEVEL_EXCEPTION_ERROR))
+                  ->defaultValue(UrlManager::LEVEL_EXCEPTION_INFO)
+                ->end()
+                ->arrayNode('port')
+                  ->children()
+		    ->arrayNode('defaults')
+		      ->prototype('array')
+			->children()
+			  ->scalarNode('scheme')->end()
+			  ->scalarNode('port')->end()
 			->end()
-		->end();
+		      ->end()
+		    ->end()
+		    ->enumNode('mode')
+                      ->values(array(UrlManager::PORT_MODE_NORMAL,UrlManager::PORT_MODE_FORCED,UrlManager::PORT_MODE_NONE))
+		      ->defaultValue(UrlManager::PORT_MODE_NORMAL)
+		    ->end()
+		  ->end()
+                ->end()
+              ->end()
+            ->end()
+          ->end();
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.

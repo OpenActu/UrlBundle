@@ -11,6 +11,10 @@ class UrlManager
 	const 	LEVEL_EXCEPTION_INFO	= "INFO";
 	const 	LEVEL_EXCEPTION_ERROR	= "ERROR";
 
+        const   PORT_MODE_NORMAL	= "normal";
+	const 	PORT_MODE_FORCED	= "forced";
+	const 	PORT_MODE_NONE		= "none";
+
 	private $url;
 	private $container;
 	private $errors;
@@ -25,9 +29,35 @@ class UrlManager
 	}
 
 	/**
+	 * get Errors
+         * @return UrlException[] 
+	 */
+        public function getErrors()
+	{
+		return $this->errors->getErrors();
+	}
+	
+	/**
+	 * Retrieve current
+         * @return string Scheme
+	 * @throws InvalidUrlException if the scheme is null (only with level_exception at "ERROR")
+         */
+	public function getScheme()
+	{
+		try
+		{
+			return $this->url->getScheme();
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+	}	
+
+ 	/**
 	 * set current scheme
 	 * @param string $scheme Scheme
-	 * @return
+	 * @throws InvalidUrlException if the scheme is invalid (only with level_exception at "ERROR")
 	 */
 	public function setScheme($scheme)
         {
@@ -40,20 +70,117 @@ class UrlManager
 			$this->errors->add($e->getMessage(),$e->getCode());
 		}
         }
+
+	/**
+	 * Retrieve current
+         * @return string Host
+	 * @throws InvalidUrlException if the host is null (only with level_exception at "ERROR")
+         */
+	public function getHost()
+	{
+		try
+		{
+			return $this->url->getHost();
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+	}	
 	
-	
+	/**
+	 * set current host
+	 * @param string $host Host
+ 	 * @throws InvalidUrlException if the host is invalid (only with level_exception at "ERROR")
+	 */
+	public function setHost($host)
+        {
+		try
+		{
+			$this->url->setHost($host);
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+        }
+
+	/**
+	 * Retrieve current Port
+         * @return int|null Port
+         */
+	public function getPort()
+	{
+		return $this->url->getPort();
+	}	
+
+	/**
+	 * set current port
+	 * @param int $port Port
+ 	 * @throws InvalidUrlException if the port is invalid (only with level_exception at "ERROR")
+	 */
+	public function setPort($port)
+        {
+		try
+		{
+			$this->url->setPort($port);
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+        }
 	/**
 	 * construct declaration
          */
 	public function __construct(Container $container)
 	{
 		$this->container 	= $container;
+		
 		$active_schemes		= $container->getParameter('open_actu_url.url.schemes');
-		$this->url 		= new Url($active_schemes);
+		$default_ports		= $container->getParameter('open_actu_url.url.port.defaults');
+		$port_mode		= $container->getParameter('open_actu_url.url.port.mode');
+		$this->url 		= new Url($active_schemes,$default_ports,$port_mode);
+		
 		$level_exception	= $container->getParameter('open_actu_url.url.level_exception');
 		$this->errors		= new UrlExceptions($level_exception);
+		
 	}
 	
+	/**
+	 * reset url parameters and errors bag
+   	 *
+	 * @return
+	 */
+	public function reset()
+	{
+		$this->url->reset();
+		$this->errors->reset();
+	}
+	
+	/**
+	 * Change the port mode
+         *
+         * three modes are availabled: "normal", "forced" and "none"
+         * - "normal" 		:(RECOMMANDED) If the port is the standard port used with the current scheme, the port will
+         *                          be omitted.
+         * - "forced"		: force the port information. If port is not given, the port takes the default port
+         *                         relative to the current scheme
+         * - "none"		: use port only if the information is done
+         * @param string $port_mode	Port mode
+	 */
+	public function changePortMode($port_mode)
+	{
+		try
+		{
+			$this->url->changePortMode($port_mode);
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+	}
+
 	/**
          * @var string
          * 

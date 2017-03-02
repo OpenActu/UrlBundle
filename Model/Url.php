@@ -25,21 +25,29 @@ use Psr\Http\Message\UriInterface;
 use OpenActu\UrlBundle\Exceptions\InvalidArgumentException;
 use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
 
-class Url implements UriInterface
+class Url
 {
     /**
      *
      */
-    const REGEXP_SCHEME_PROTOCOL	= "(?<scheme>[a-z0-9*]*)";
-    const REGEXP_SCHEME_PUNCT  		= "[:]{0,1}";
-    const REGEXP_SCHEME_PATH_ABEMPTY 	= "\/\/";
+    const VAR_PUNCT			= '.';
+    const VAR_COLUMN			= ':';
 
+    /**
+     *
+     */
+    const REGEXP_SCHEME_PROTOCOL	= "(?<scheme>[a-z0-9*]*)";
+    const REGEXP_SCHEME_COLUMN  	= "[:]{0,1}";
+    const REGEXP_SCHEME_PATH_ABEMPTY 	= "\/\/";
+    const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^\/.]+[.])*)[^\/.]+)[.]){0,1})";
+    const REGEXP_HOST_DOMAIN		= "(?<domain>[^.\/]{3,})";
+    const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
+    const REGEXP_HOST_IPV4		= "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
     /**
      * Scheme component of the URI.
      *
-     * @var string|null Scheme component
+     * @var string Scheme component
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     * @return string The URI scheme.
      */
     private $scheme;
       
@@ -54,19 +62,38 @@ class Url implements UriInterface
     private $query;
     
     /**
-     * @todo
+     * Subdomain component of the URL
+     *
+     * The subdomain is part of Authority section. It's provided only with the Domain Name Service way
+     *
+     * @var string|null Subdomain component
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
      */
     private $subdomain;
     
     /**
-     * @todo
+     * Domain component of the URL
+     *
+     * The domain is part of Authority section.
+     * There is two ways to understand what the domain is
+     * 	- first case : a well-naming string like "google" or "twitter" (Domain Name Service way)
+     *  - second case : an IP address compound of numbers and punct like "127.0.0.1"
+     *
+     * @var string Domain component
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
      */
     private $domain;
     
     /**
-     * @todo
+     * Top level domain  of the URL
+     *
+     * This corresponds to the domain extension is part of authority section. It's provided only with
+     * the Domain Name Service way
+     * 
+     * @var string|null Top Level Domain component
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
      */
-    private $domainExtension;
+    private $topLevelDomain;
     
     /**
      * @todo
@@ -79,7 +106,9 @@ class Url implements UriInterface
     private $filenameExtension;
     
     /**
-     * @todo
+     * Port of the URL
+     * 
+     * @var int|null Port component
      */
     private $port;
     
@@ -93,15 +122,45 @@ class Url implements UriInterface
      */
     private static $active_schemes = array();
 
+    /**
+     * Array of relationships between schemes and defaults ports
+     */
+    private static $default_ports = array();
+    
+    /**
+     * port mode
+     */
+    private static $port_mode;
+
     //////////////////////////////////////////////////////////////////////////////////////
     //											//
     //				CONSTRUCTOR						//
     //											//
     //////////////////////////////////////////////////////////////////////////////////////
 
-    public function __construct($active_schemes)
+    public function __construct($active_schemes, $default_ports, $port_mode)
     {
-	self::$active_schemes = $active_schemes;
+	self::$active_schemes 	= $active_schemes;
+	self::$default_ports  	= $default_ports;
+	self::$port_mode	= $port_mode;
+    }
+
+   /**
+     * Retrieve the scheme component of the URI.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     * @return string The URI scheme.
+     */
+    public function getScheme()
+    {
+	if(null === $this->scheme)
+	{
+		throw new InvalidUrlException(
+			InvalidUrlException::INVALID_SCHEME_FORMAT_MESSAGE,
+			InvalidUrlException::INVALID_SCHEME_FORMAT_CODE
+		);
+	}
+	return $this->scheme;
     }
 
     /**
@@ -120,6 +179,9 @@ class Url implements UriInterface
      */
     public function setScheme($scheme)
     {
+	$this->scheme	= null;
+
+	// is scheme valid ?
 	$regexp = $this->getSchemeRegexp('scheme_only');
 	if(!preg_match($regexp,$scheme))
 	{
@@ -129,13 +191,206 @@ class Url implements UriInterface
 			array('name' => $scheme)
 		);
 	}
+	if(empty($scheme))
+	{
+		$scheme = "";
+	}
+	$this->scheme = strtolower($scheme);
     }
     
+   /**
+     * Retrieve the host component of the URI.
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
+     * @return string The URI host.
+     */
+    public function getHost()
+    {
+	if(null === $this->domain)
+	{
+		throw new InvalidUrlException(
+			InvalidUrlException::NO_HOST_FOUND_MESSAGE,
+			InvalidUrlException::NO_HOST_FOUND_CODE
+		);
+	}
+
+	$host = "";
+
+	if(null !== $this->subdomain)
+		$host = $this->subdomain.self::VAR_PUNCT;
+	
+	$host.=$this->domain;
+
+	if(null !== $this->topLevelDomain)
+		$host.=self::VAR_PUNCT.$this->topLevelDomain;
+        
+        return $host;
+    }
+
+   /**
+     * Set the host component of the URI.
+     *
+     * Host is the concatenation between subdomain, domain and top level domain separated with punct in 
+     * case of Domain Name service. If the host is an IP, so only the domain must be used. If no host is 
+     * present, this method MUST return an empty string.
+     *
+     * The value returned MUST be normalized to lowercase, per RFC 3986
+     * Section 3.2.2.
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
+     * @return string The URI host.
+     */
+    public function setHost($host)
+    {
+	$this->domain 		= null;
+	$this->subdomain  	= null;
+	$this->topLevelDomain	= null;
+
+	// is host an IP address ?
+	$regexp = $this->getHostRegexp('ip_v4');
+	if(preg_match($regexp,$host,$matches))
+	{
+		$this->domain		= $host;
+		return;
+	}
+	
+	$regexp = $this->getHostRegexp('dns');
+	if(preg_match($regexp,$host,$matches))
+	{
+		$this->subdomain	= (!empty($matches['subdomain'])) ? strtolower($matches['subdomain']) : null;
+		$this->domain 		= (!empty($matches['domain'])) ? strtolower($matches['domain']) : null;
+		$this->topLevelDomain   = (!empty($matches['topLevelDomain'])) ? strtolower($matches['topLevelDomain']) : null;
+		return;
+	}
+	
+	throw new InvalidUrlException(
+		InvalidUrlException::INVALID_HOST_MESSAGE,
+		InvalidUrlException::INVALID_HOST_CODE,
+		array('name' => $host)
+	);
+	
+    }
+
+    /**
+     * Retrieve the port component of the URI.
+     *
+     * Important information from port mode (defined in config.yml)
+     *
+     * If the port mode is at "normal" (RECOMMANDED), and if the port is the standard port used with 
+     * the current scheme, this method return null.
+     * 
+     * If the port mode is at "forced", if the port has no port information given, then it return the default
+     * port number as described in port defaults area, else return null.
+     *
+     * If no port is present, and no scheme is present, this method return a null value.
+     *
+     * @return null|int The URI port.
+     */    
+    public function getPort()
+    {
+	
+	switch(self::$port_mode)
+	{
+		case UrlManager::PORT_MODE_NORMAL:
+			if(count(self::$default_ports))
+			{
+				foreach(self::$default_ports as $item)
+				{
+					$scheme = $item['scheme'];
+					$port	= (int)$item['port'];
+						
+					if($this->scheme === $scheme && $this->port === $port)
+						return null;
+				}
+			}
+			break;
+		case UrlManager::PORT_MODE_FORCED:
+			if(count(self::$default_ports))
+			{
+				foreach(self::$default_ports as $item)
+				{
+					$scheme = $item['scheme'];
+					$port	= (int)$item['port'];
+					if($this->scheme === $scheme && $this->port === null)
+						return $port;
+				}
+			}
+			break;
+		case UrlManager::PORT_MODE_NONE:
+		default:
+	}	
+	return $this->port;
+    }
+
+    /**
+     * Set the port component of the URL.
+     *
+     * The port must be an integer.
+     * 
+     * @param int $port	Port 
+     * @throws InvalidUrlException if the port is not an integer
+     */
+    public function setPort($port)
+    {
+	$this->port = null;
+	
+	// is int ?
+	if(ctype_digit(strval($port)))
+	{
+		$this->port = (int)$port;
+		return;	
+	}
+
+	throw new InvalidUrlException(
+		InvalidUrlException::INVALID_PORT_FORMAT_MESSAGE,
+		InvalidUrlException::INVALID_PORT_FORMAT_CODE,
+		array('name' => $host)
+	);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////
     //											//
     //				SPECIFIC METHODS					//
     //											//
     //////////////////////////////////////////////////////////////////////////////////////
+    
+    /**
+     * Change port mode
+     *
+     * three modes are availabled: "normal", "forced" and "none"
+     * - "normal" 		:(RECOMMANDED) If the port is the standard port used with the current scheme, the port will
+     *                          be omitted.
+     * - "forced"		: force the port information. If port is not given, the port takes the default port
+     *                         relative to the current scheme
+     * - "none"		: use port only if the information is done
+     * @param string $port_mode	Port mode
+     * @throws InvalidUrlException if the port mode is not in the validated modes
+     */
+    public function changePortMode($port_mode)
+    {
+	if(in_array($port_mode, array(UrlManager::PORT_MODE_NORMAL,UrlManager::PORT_MODE_FORCED,UrlManager::PORT_MODE_NONE)))
+	{
+		self::$port_mode = $port_mode;
+		return;
+	}
+	throw new InvalidUrlException(
+		InvalidUrlException::INVALID_PORT_MODE_DEFINED_MESSAGE,
+		InvalidUrlException::INVALID_PORT_MODE_DEFINED_CODE,
+		array('name' => $port_mode)
+	);
+    }
+
+    /**
+     * Init all attributes to null
+     */
+    public function reset()
+    {
+	$this->scheme 		= null;
+	$this->subdomain	= null;
+	$this->domain		= null;
+	$this->topLevelDomain	= null;
+	$this->port		= null;
+    }
     
     /**
      * @param  string $str regexp without delimiters
@@ -145,6 +400,30 @@ class Url implements UriInterface
     private static function formatRegexp($str)
     {
         return "/^".$str."$/i";
+    }
+    
+    /**
+     * @param  enum $option mode of regexp host building
+     *         - dns		: regexp with dns requirements
+     *         - ip_v4          : regexp with ip requirements 
+     *
+     * @return string the regexp host validation among option selected
+     */
+    private function getHostRegexp($option = "dns")
+    {
+	$host_regexp = null;    	
+	switch($option)
+	{
+		case 'ip_v4':
+			$host_regexp = self::REGEXP_HOST_IPV4;
+			break;		
+		case 'dns':
+		default:
+			$host_regexp = self::REGEXP_HOST_SUBDOMAIN.
+					self::REGEXP_HOST_DOMAIN.
+					self::REGEXP_HOST_TOP_LEVEL_DOMAIN;
+	}
+	return self::formatRegexp($host_regexp);
     }
 
     /**
@@ -166,7 +445,7 @@ class Url implements UriInterface
 		default:
 			$scheme_regexp = 
 				self::REGEXP_SCHEME_PROTOCOL.
-				self::REGEXP_SCHEME_PUNCT.
+				self::REGEXP_SCHEME_COLUMN.
 				self::REGEXP_SCHEME_PATH_ABEMPTY;
 
 	}
@@ -181,7 +460,6 @@ class Url implements UriInterface
     const POST_FILENAME_TAG		= '.';
     const PRE_QUERY_TAG			= '?';
     const PRE_FRAGMENT			= '#';
-    const URL_SCHEME			= "/^(?<scheme>[a-z0-9*]*)[:]{0,1}\/\//i";
     const PATH_PATTERN			= "/(\/(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})(?<filename>[^?.\/]+)([.\/]{0,1})(?<filenameExtension>[^?]*)|\/|)/i";
     const REGEXP_HOST			= "((?<subdomain>(([^\/.]+[.])*)[^\/.]+[.]){0,1})(?<domain>[^.\/]{3,})([.](?<domainExtension>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
     const REGEXP_PORT			= "([:](?<port>\d+))?";
@@ -331,24 +609,7 @@ class Url implements UriInterface
 
 	}    
 	
-    /**
-     * Retrieve the scheme component of the URI.
-     *
-     * If no scheme is present, this method MUST return an empty string.
-     *
-     * The value returned MUST be normalized to lowercase, per RFC 3986
-     * Section 3.1.
-     *
-     * The trailing ":" character is not part of the scheme and MUST NOT be
-     * added.
-     *
-     * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     * @return string The URI scheme.
-     */
-    public function getScheme()
-    {
-	return $this->scheme;
-    }
+    
 
     /**
      * Retrieve the authority component of the URI.
@@ -397,51 +658,7 @@ class Url implements UriInterface
     {
     }
 
-    /**
-     * Retrieve the host component of the URI.
-     *
-     * If no host is present, this method MUST return an empty string.
-     *
-     * The value returned MUST be normalized to lowercase, per RFC 3986
-     * Section 3.2.2.
-     *
-     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
-     * @return string The URI host.
-     */
-    public function getHost()
-    {
-	$host = null;
 
-	if(null !== $this->subdomain)
-		$host = $this->subdomain.self::POST_FILENAME_TAG;
-	
-	$host.=$this->domain;
-
-	if(null !== $this->domainExtension)
-		$host.=self::POST_FILENAME_TAG.$this->domainExtension;
-        
-        return $host;
-    }
-
-    /**
-     * Retrieve the port component of the URI.
-     *
-     * If a port is present, and it is non-standard for the current scheme,
-     * this method MUST return it as an integer. If the port is the standard port
-     * used with the current scheme, this method SHOULD return null.
-     *
-     * If no port is present, and no scheme is present, this method MUST return
-     * a null value.
-     *
-     * If no port is present, but a scheme is present, this method MAY return
-     * the standard port for that scheme, but SHOULD return null.
-     *
-     * @return null|int The URI port.
-     */
-    public function getPort()
-    {
-	return $this->port;
-    }
 
     /**
      * Retrieve the path component of the URL.

@@ -16,6 +16,10 @@ class UrlExceptions
          */
 	private $level_exception;
 
+	public function reset()
+	{
+		$this->errors = array();
+	}
 	public function __construct($level_exception)
 	{
 		$this->level_exception=$level_exception;

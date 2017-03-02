@@ -24,9 +24,18 @@ class OpenActuUrlExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 	$loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
-			
-	$container->setParameter('open_actu_url.url.schemes', $config['url']['schemes']);	
+	
+
+	$container->setParameter('open_actu_url.url.schemes', $config['url']['schemes']);
 	$container->setParameter('open_actu_url.url.level_exception', $config['url']['level_exception']);
 	
+	$container->setParameter('open_actu_url.url.port.defaults', array());
+	if(!empty($config['url']) && !empty($config['url']['port']) && !empty($config['url']['port']['defaults']))
+		$container->setParameter('open_actu_url.url.port.defaults', $config['url']['port']['defaults']);
+	
+	$container->setParameter('open_actu_url.url.port.mode', UrlManager::PORT_MODE_NONE);
+	if(!empty($config['url']) && !empty($config['url']['port']) && !empty($config['url']['port']['mode']))
+		$container->setParameter('open_actu_url.url.port.mode', $config['url']['port']['mode']);
+		
     }
 }

@@ -24,11 +24,48 @@ class RoadmapTest extends KernelTestCase
     private function validateService()
     {
 	$url = $this->container->get('open-actu.url.manager');
-	$url->setScheme('ht-tp');
-	if($url->hasErrors())
+	
+	/**
+ 	 * Build url with approach object
+	 *
+	 * step 1 : check getters / setters
+	 * @author   yanroussel <yanroussel@gmail.com>	 
+	 */	
+	$asserts = array(
+			array('scheme' => 'http', 'host' => 'www.google.fr', 'port' => 80,'port_mode' => 'normal','attempted_port' => null),
+			array('scheme' => 'http', 'host' => 'google.fr', 'port' => null,'port_mode' => 'forced','attempted_port' => 80),
+			array('scheme' => 'http', 'host' => 'google.fr', 'port' => null,'port_mode' => 'none','attempted_port' => 80),
+			array('scheme' => 'http', 'host' => 'localhost', 'port' => 8080,'port_mode' => 'normal','attempted_port' => 8080),
+			array('scheme' => 'https', 'host' => '127.0.0.1', 'port' => 8080,'port_mode' => 'normal','attempted_port' => 8080),
+	);
+	foreach($asserts as $assert)
 	{
-		echo 'z';
+		$url->reset();
+		$url->changePortMode($assert['port_mode']);
+		$url->setScheme($assert['scheme']);
+		$url->setHost($assert['host']);
+		if($assert['port'])
+			$url->setPort($assert['port']);
+		
+		
+		
+		if($url->hasErrors())
+		{
+			foreach($url->getErrors() as $error)
+			{
+				echo $error->getMessage().' # '.$error->getCode();
+			}
+		}
+		else
+		{
+			$this->assertTrue(
+				($url->getScheme() === $assert['scheme']) && 
+				($url->getHost() === $assert['host']) &&
+				($url->getPort() === $assert['attempted_port'])
+			);
+		}
 	}
+	
 	/**
 	$urls = array(
 		'https://www.ola.fr',
