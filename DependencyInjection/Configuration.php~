@@ -34,7 +34,6 @@ class Configuration implements ConfigurationInterface
 								UrlManager::LEVEL_EXCEPTION_ERROR
 							)
 						)
-						->defaultValue(UrlManager::LEVEL_EXCEPTION_INFO)
 					->end()
 				->end()
 			->end()

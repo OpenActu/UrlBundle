@@ -23,7 +23,16 @@ class RoadmapTest extends KernelTestCase
     
     private function validateService()
     {
-	$url = $this->container->get('open-actu.url');
+	$url = $this->container->get('open-actu.url.manager');
+	$url->setScheme('ht-tp');
+	if($url->hasErrors())
+	{
+		foreach($url->getErrors() as $error)
+		{
+			echo $error->getMessage().' # '.$error->getCode();
+		}
+	}
+	/**
 	$urls = array(
 		'https://www.ola.fr',
 		'htTp://www.lemAonde.fr/x/y//z/test.html?name=toto',
@@ -39,6 +48,7 @@ class RoadmapTest extends KernelTestCase
 		
 		echo $new_url."\r\n";
 	}
+	*/
 	$this->assertTrue(true);
     }
 }

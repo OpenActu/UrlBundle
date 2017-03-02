@@ -28,5 +28,8 @@ class OpenActuUrlExtension extends Extension
 	$container->setParameter('open_actu_url.url.schemes', $config['url']['schemes']);	
 	$container->setParameter('open_actu_url.url.level_exception', $config['url']['level_exception']);
 	
+	
+	print_r($config);die;
+	
     }
 }

@@ -1,0 +1,5 @@
+services:
+    open-actu.url.manager:
+        class: OpenActu\UrlBundle\Model\UrlManager
+        arguments: [ "@service_container" ]
+        

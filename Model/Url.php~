@@ -23,9 +23,155 @@ namespace OpenActu\UrlBundle\Model;
  */
 use Psr\Http\Message\UriInterface;
 use OpenActu\UrlBundle\Exceptions\InvalidArgumentException;
+use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
 
 class Url implements UriInterface
 {
+    /**
+     *
+     */
+    const REGEXP_SCHEME_PROTOCOL	= "(?<scheme>[a-z0-9*]*)";
+    const REGEXP_SCHEME_PUNCT  		= "[:]{0,1}";
+    const REGEXP_SCHEME_PATH_ABEMPTY 	= "\/\/";
+
+    /**
+     * Scheme component of the URI.
+     *
+     * @var string|null Scheme component
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     * @return string The URI scheme.
+     */
+    private $scheme;
+      
+    /** 
+     * @todo 
+     */    
+    private $folder;
+    
+    /** 
+     * @todo 
+     */
+    private $query;
+    
+    /**
+     * @todo
+     */
+    private $subdomain;
+    
+    /**
+     * @todo
+     */
+    private $domain;
+    
+    /**
+     * @todo
+     */
+    private $domainExtension;
+    
+    /**
+     * @todo
+     */
+    private $filename;
+    
+    /**
+     * @todo
+     */
+    private $filenameExtension;
+    
+    /**
+     * @todo
+     */
+    private $port;
+    
+    /**
+     * @todo
+     */
+    private $fragment;
+    
+    /**
+     * Array of active schemes (must be referenced in "open_actu_url.url.schemes" section in config.yml)
+     */
+    private static $active_schemes = array();
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    //											//
+    //				CONSTRUCTOR						//
+    //											//
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    public function __construct($active_schemes)
+    {
+	self::$active_schemes = $active_schemes;
+    }
+
+    /**
+     *  set the scheme component of the URI.
+     *
+     * If no scheme is present, this attribute must be an empty string.
+     *
+     * The value returned MUST be normalized to lowercase, per RFC 3986
+     * Section 3.1.
+     *
+     * The trailing ":" character is not part of the scheme and MUST NOT be
+     * added.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     * @return 
+     */
+    public function setScheme($scheme)
+    {
+	$regexp = $this->getSchemeRegexp('scheme_only');
+	if(!preg_match($regexp,$scheme))
+	{
+		throw new InvalidUrlException(
+			InvalidUrlException::INVALID_SCHEME_FORMAT_MESSAGE,
+			InvalidUrlException::INVALID_SCHEME_FORMAT_CODE
+		);
+	}
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////
+    //											//
+    //				SPECIFIC METHODS					//
+    //											//
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    /**
+     * @param  string $str regexp without delimiters
+     *
+     * @return string the regexp with delimiters
+     */
+    private static function formatRegexp($str)
+    {
+        return "/^".$str."$/i";
+    }
+
+    /**
+     * @param  enum $option mode of regexp scheme building 
+     *         - full 		: regexp with scheme protocol, punct and path 
+     *         - scheme_only 	: regexp with scheme protocol
+     *
+     * @return string the regexp scheme validation among option selected
+     */
+    private function getSchemeRegexp($option = "full")
+    {
+	$scheme_regexp = null;
+	switch($option)
+	{
+		case 'scheme_only':
+			$scheme_regexp = self::REGEXP_SCHEME_PROTOCOL;
+			break;
+		case 'full':
+		default:
+			$scheme_regexp = 
+				self::REGEXP_SCHEME_PROTOCOL.
+				self::REGEXP_SCHEME_PUNCT.
+				self::REGEXP_SCHEME_PATH_ABEMPTY;
+
+	}
+	return self::formatRegexp($scheme_regexp);
+    }
+    ///////////////////////////////// refactoring ////////////////////////////////////////
     const SCHEME_DEFAULT		= "http";
     const PORT_DEFAULT			= 80;
     const AUTHORITY_PATH_ABEMPTY	= "//";
@@ -36,25 +182,14 @@ class Url implements UriInterface
     const PRE_FRAGMENT			= '#';
     const URL_SCHEME			= "/^(?<scheme>[a-z0-9*]*)[:]{0,1}\/\//i";
     const PATH_PATTERN			= "/(\/(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})(?<filename>[^?.\/]+)([.\/]{0,1})(?<filenameExtension>[^?]*)|\/|)/i";
-    const REGEXP_SCHEME			= "(?<scheme>[a-z0-9*]*)[:]{0,1}\/\/";
-    const REGEXP_HOST			= "((?<subdomain>(([^\/.]+[.])*)[^\/.]+[.]){0,1})(?<domain>[^.\/]{3,})[.](?<domainExtension>(([^\/.]{2,3}[.])*)[^\/.]{2,3})";
+    const REGEXP_HOST			= "((?<subdomain>(([^\/.]+[.])*)[^\/.]+[.]){0,1})(?<domain>[^.\/]{3,})([.](?<domainExtension>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
     const REGEXP_PORT			= "([:](?<port>\d+))?";
     const REGEXP_PATH			= "(\/(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})(?<filename>[^?.\/]+)([.\/]{0,1})(?<filenameExtension>[a-z0-9\.]*)|\/|)";
     const REGEXP_QUERY			= "([?](?<query>[^#]*))?";
     const REGEXP_FRAGMENT		= "([#](?<fragment>.*))?";
     const REGEXP_REST			= "(?<rest>.*)";
 
-    private $scheme;    
-    private $folder;
-    private $query;
-    private $subdomain;
-    private $domain;
-    private $domainExtension;
-    private $filename;
-    private $filenameExtension;
-    private $port;
-    private $fragment;
-
+    
     private $encodeUrl = true;
     
     /**
@@ -65,12 +200,6 @@ class Url implements UriInterface
 	$this->encodeUrl = $option;
     }
     
-    private static function getSchemeRegexp()
-    {
-	return "/^".
-		self::REGEXP_SCHEME.
-		"/i";
-    }
     private static function getCompleteRegexp()
     {
 	return "/^".
@@ -84,9 +213,7 @@ class Url implements UriInterface
 		"$/i";
 		
     }
-    public function __construct()
-    {
-    }
+
     
     /**
      * Init the current object
