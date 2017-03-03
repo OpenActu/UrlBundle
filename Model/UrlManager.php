@@ -15,6 +15,8 @@ class UrlManager
 	const 	PORT_MODE_FORCED	= "forced";
 	const 	PORT_MODE_NONE		= "none";
 
+   	const 	SCHEME_DEFAULT		= "http";
+
 	private $url;
 	private $container;
 	private $errors;
@@ -162,21 +164,23 @@ class UrlManager
 	/**
   	 * get fragment
          * 
+	 * @param bool $decodeURL (OPTIONAL) Decoding to URL recommandation
          * @return string Fragment
  	 */
-	public function getFragment()
+	public function getFragment($decodeURL=false)
 	{
-		return $this->url->getFragment();
+		return $this->url->getFragment($decodeURL);
 	}
 
 	/**
 	 * set fragment
 	 *
 	 * @param string $fragment fragment component
+	 * @param bool $encodeURL (OPTIONAL) Encoding to URL recommandation
 	 */
-	public function setFragment($fragment)
+	public function setFragment($fragment,$encodeURL=false)
 	{
-		$this->url->setFragment($fragment);
+		$this->url->setFragment($fragment,$encodeURL);
 	}
 
 	/**
@@ -198,10 +202,11 @@ class UrlManager
 	 * For example, the queries "now=here&right=left" and "now=&right=left" are valid.
 	 * 
          * @param string $query
+	 * @param bool $encodeURL (OPTIONAL) Encoding to URL recommandation
      	 */
-        public function setQuery($query)
+        public function setQuery($query,$encodeURL=false)
         {
-		$this->url->setQuery($query);
+		$this->url->setQuery($query,$encodeURL);
         }
 	/**
 	 * construct declaration
@@ -213,7 +218,8 @@ class UrlManager
 		$active_schemes		= $container->getParameter('open_actu_url.url.schemes');
 		$default_ports		= $container->getParameter('open_actu_url.url.port.defaults');
 		$port_mode		= $container->getParameter('open_actu_url.url.port.mode');
-		$this->url 		= new Url($active_schemes,$default_ports,$port_mode);
+		$scheme_default		= $container->getParameter('open_actu_url.url.scheme_default');
+		$this->url 		= new Url($active_schemes,$default_ports,$port_mode,$scheme_default);
 		
 		$level_exception	= $container->getParameter('open_actu_url.url.level_exception');
 		$this->errors		= new UrlExceptions($level_exception);
@@ -269,5 +275,54 @@ class UrlManager
 	public function __toString()
 	{
 		return (string)$this->url;
+	}
+ 
+        /**
+         * Check if the url is valid 
+         *
+	 * An URL is valid only if a scheme is given
+         *
+	 * @return bool Response of the current url has errors or not 
+         */
+        public function isValid()
+	{
+		if($this->hasErrors())
+		{
+			return false;
+		}
+
+		$validator = $this->container->get('validator');
+		$listErrors= $validator->validate($this->url);
+		if(count($listErrors) > 0)
+		{
+			foreach($listErrors as $listError)
+			{
+				$this->errors->add($listError->getMessage(),InvalidUrlException::INVALID_VALIDATION_CODE);
+			}
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Sanitize an url
+         *
+         * The object is to validate the URL construct and optionnaly return the normalized well-formed URL
+	 *
+	 * @param string $url Url to sanitize
+         * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false)
+         * @return bool The url validation result
+         */
+	public function sanitize($url,$encodeURL=false)
+	{
+		try
+		{
+			$this->url->sanitize($url,$encodeURL);
+			return $this->isValid();
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
 	}
 }

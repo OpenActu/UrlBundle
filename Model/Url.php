@@ -24,6 +24,8 @@ namespace OpenActu\UrlBundle\Model;
 use Psr\Http\Message\UriInterface;
 use OpenActu\UrlBundle\Exceptions\InvalidArgumentException;
 use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 class Url
 {
@@ -36,6 +38,7 @@ class Url
     const VAR_PATH_ABEMPTY		= '//';
     const VAR_INTERROGATION		= '?';
     const VAR_DIESE			= '#';
+    const VAR_QUERY_AND			= '&';
 
     /**
      *
@@ -47,7 +50,7 @@ class Url
     const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^\/.]+[.])*)[^\/.]+)[.]){0,1})";
     const REGEXP_HOST_DOMAIN		= "(?<domain>[^.\/]{3,})";
     const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
-    const REGEXP_HOST_IPV4		= "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+    const REGEXP_HOST_IPV4		= "(?<domain>(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))";
     const REGEXP_PATH_FOLDER		= "(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})";
     const REGEXP_PATH_FILENAME		= "(?<filename>[^?\/]+)";
     const REGEXP_PATH_FILENAME_EXTENSION= "(?<filenameExtension>[^?]*)";
@@ -104,6 +107,7 @@ class Url
      *
      * @var string Domain component
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     * @Assert\NotBlank(message="The domain can not be blank")
      */
     private $domain;
     
@@ -173,17 +177,25 @@ class Url
      */
     private static $port_mode;
 
+    /**
+     * scheme default
+     *
+     * @var string Scheme default
+     */
+    private static $scheme_default;
+
     //////////////////////////////////////////////////////////////////////////////////////
     //											//
     //				CONSTRUCTOR						//
     //											//
     //////////////////////////////////////////////////////////////////////////////////////
 
-    public function __construct($active_schemes, $default_ports, $port_mode)
+    public function __construct($active_schemes, $default_ports, $port_mode, $scheme_default)
     {
 	self::$active_schemes 	= $active_schemes;
 	self::$default_ports  	= $default_ports;
 	self::$port_mode	= $port_mode;
+	self::$scheme_default	= $scheme_default;
     }
 
    /**
@@ -196,10 +208,7 @@ class Url
     {
 	if(null === $this->scheme)
 	{
-		throw new InvalidUrlException(
-			InvalidUrlException::INVALID_SCHEME_FORMAT_MESSAGE,
-			InvalidUrlException::INVALID_SCHEME_FORMAT_CODE
-		);
+		return self::$scheme_default;
 	}
 	return $this->scheme;
     }
@@ -212,8 +221,7 @@ class Url
      * The value returned MUST be normalized to lowercase, per RFC 3986
      * Section 3.1.
      *
-     * The trailing ":" character is not part of the scheme and MUST NOT be
-     * added.
+     * The trailing ":" character is not part of the scheme and is added.
      *
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
      * @return 
@@ -222,6 +230,11 @@ class Url
     {
 	$this->scheme	= null;
 
+	if(empty($scheme))
+	{
+		return;
+	}
+	
 	// is scheme valid ?
 	$regexp = $this->getSchemeRegexp('scheme_only');
 	if(!preg_match($regexp,$scheme))
@@ -232,10 +245,7 @@ class Url
 			array('name' => $scheme)
 		);
 	}
-	if(empty($scheme))
-	{
-		$scheme = "";
-	}
+	
 	$this->scheme = strtolower($scheme);
     }
     
@@ -385,7 +395,7 @@ class Url
 	throw new InvalidUrlException(
 		InvalidUrlException::INVALID_PORT_FORMAT_MESSAGE,
 		InvalidUrlException::INVALID_PORT_FORMAT_CODE,
-		array('name' => $host)
+		array('name' => $port)
 	);
     }
 
@@ -513,39 +523,44 @@ class Url
      * include an ampersand ("&") not intended as a delimiter between values,
      * that value MUST be passed in encoded form (e.g., "%26") to the instance.
      *
+     * @param string $query Query string
+     * @param bool $encodeURL (OPTIONAL) Encoding to URL recommandation
      * @see https://tools.ietf.org/html/rfc3986#section-2
      * @see https://tools.ietf.org/html/rfc3986#section-3.4
      */
-    public function setQuery($query)
+    public function setQuery($query, $encodeURL=false)
     {
 	$this->query = null;
 
 	if(empty($query))
 		return;
-
-	$this->query = $query;
+	$tab = self::queryToArray($query,false);
+	$new_query = self::arrayToQuery($tab,$encodeURL);
+	$this->query = $new_query;
     }
 
     /**
      * Retrieve the fragment component of the URL.
      *
-     * If no fragment is present, this method MUST return an empty string.
+     * If no fragment is present, this method return an empty string.
      *
-     * The leading "#" character is not part of the fragment and MUST NOT be
-     * added.
+     * The leading "#" character is not part of the fragment and is not added.
      *
-     * The value returned MUST be percent-encoded, but MUST NOT double-encode
-     * any characters. To determine what characters to encode, please refer to
-     * RFC 3986, Sections 2 and 3.5.
+     * The value returned can be percent-encoded (option decodeURL at false). To determine
+     * what characters to encode, please refer to RFC 3986, Sections 2 and 3.5.
      *
+     * @param bool $decodeURL (OPTIONAL) Decoding to URL recommandation
      * @see https://tools.ietf.org/html/rfc3986#section-2
      * @see https://tools.ietf.org/html/rfc3986#section-3.5
      * @return string The URL fragment.
      */
-    public function getFragment()
+    public function getFragment($decodeURL=false)
     {
 	if(null === $this->fragment)
 		return "";
+	
+	if(true === $decodeURL)
+		return urldecode($this->fragment);
 
 	return $this->fragment;
     }
@@ -557,16 +572,21 @@ class Url
      * any characters. To determine what characters to encode, please refer to
      * RFC 3986, Sections 2 and 3.5.
      *
+     * @param string $fragment Fragment component
+     * @param bool $encodeURL (OPTIONAL) Encoding to URL recommandation
      * @see https://tools.ietf.org/html/rfc3986#section-2
      * @see https://tools.ietf.org/html/rfc3986#section-3.5
      */
-    public function setFragment($fragment)
+    public function setFragment($fragment,$encodeURL=false)
     {
 	$this->fragment = null;
 	
 	if(empty($fragment))
 		return;
 	
+        if($encodeURL=== true)
+		$fragment = urlencode($fragment);
+
 	$this->fragment = $fragment;
     }
 
@@ -591,9 +611,9 @@ class Url
     public function getAuthority()
     {
 	$authority = $this->getHost();
-	if(null !== $this->port)
+	if(null !== $this->getPort())
 	{
-		$authority.=self::VAR_COLUMN.$this->port;
+		$authority.=self::VAR_COLUMN.$this->getPort();
 	}
 	return $authority;
     }
@@ -601,11 +621,12 @@ class Url
     /**
      * Retrieve the keys from the query
      *
+     * @param bool $decodeURL Option to decode key/value set (DEFAULT=false)
      * @return array|null list of query keys
      */
-    public function getQueryParameterKeys()
+    public function getQueryParameterKeys($decodeURL=false)
     {
-	$tab = self::queryToArray($this->query);
+	$tab = self::queryToArray($this->query,$decodeURL);
         if(count($tab))
 		return array_keys($tab);
 	return null;
@@ -615,12 +636,13 @@ class Url
      * Query conversion to array
      * 
      * @param string $query Query
+     * @param bool $decodeURL Option to decode key/value set (DEFAULT=false)
      * @return array 
      */
-    private static function queryToArray($query)
+    private static function queryToArray($query,$decodeURL=false)
     {
 	$tab	= array();
-	$items	= explode('&', $query);
+	$items	= explode(self::VAR_QUERY_AND, $query);
 	if(count($items))
 	{
 		foreach($items as $item)
@@ -632,37 +654,86 @@ class Url
 			elseif(count($tmp) === 1)
 				$tab[$tmp[0]]="";
 		}
+		
+		if($decodeURL === true)
+		{	
+			$ttab = array();
+			foreach($tab as $key => $value)
+			{
+				$ttab[urldecode($key)] = urldecode($value);
+			}
+			$tab = $ttab;
+		}
 	}
 	asort($tab);
 	return $tab;
     }
+    
+    /**
+     * Array conversion to query
+     *
+     * Array given in parameters is a single set of key/value where key and value are scalars data.
+     * If value is not a scalar, the key/value is ignored to the rendering of query
+     *
+     * @param array $array Array of parameters in key/value mode
+     * @param bool $encodeUrl Option to encode key/value set (DEFAULT=false)
+     * @return string Query well formed
+     */
+    public static function arrayToQuery(array $array,$encodeUrl=false)
+    {
+	$query = "";
+	if(count($array) > 0)
+	{
+		foreach($array as $key => $value)
+		{
+			if(!is_array($value) && !is_object($value))
+			{
+				if($query !== "")
+					$query.=self::VAR_QUERY_AND;
+
+				if($encodeUrl === true)
+					$query.=urlencode($key).'='.urlencode($value);
+				else
+					$query.=$key.'='.$value;
+			}
+		}
+	}
+	return $query;
+    }
+
     /**
      * Retrieve the value from a key
      *
      * If no key found in the query, the method return NULL
      *
      * @param string $key Key from query
-     * @return string value
+     * @param bool $decodeURL Option to decode key/value set (DEFAULT=false)
+     * @return string|null value
      */
-    public function getQueryParameter($key)
+    public function getQueryParameter($key, $decodeURL=false)
     {
-	$query  = $this->getQuery();
-	$items	= explode('&', $query);
-	foreach($items as $item)
+	$tab = self::queryToArray($this->query,$decodeURL);
+	return ($tab && !empty($tab[$key])) ? $tab[$key] : null;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    //											//
+    //				CUSTOM VALIDATORS					//
+    //											//
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    /**
+     * Check the scheme format
+     * @Assert\Callback
+     */
+    public function isSchemeValid(ExecutionContextInterface $context)
+    {
+	if(null !== $this->scheme && !in_array($this->scheme,self::$active_schemes))
 	{
-		$tmp = explode('=',$item);
-		if(count($tmp) === 2)
-		{
-			if($tmp[0] == $key)
-				return $tmp[1];
-		}	
-		elseif(count($tmp) === 1)
-		{
-			if($item == $key)
-				return "";
-		}
+		// get message
+		$message = str_replace("%name%",$this->scheme,InvalidUrlException::INVALID_SCHEME_FORMAT_MESSAGE);
+		$context->buildViolation($message)->atPath("scheme")->addViolation();
 	}
-	return null;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -716,19 +787,21 @@ class Url
     
     /**
      * @param  string $str regexp without delimiters
-     *
+     * @param  bool $closureMode Define if the regexp is part (false) or terminal (true) regexp
      * @return string the regexp with delimiters
      */
-    private static function formatRegexp($str)
+    private static function formatRegexp($str,$closureMode=true)
     {
-        return "/^".$str."$/i";
+	if($closureMode === true)
+	        return "/^".$str."$/i";
+	return $str;
     }
     
     /**
      * @param  enum $option mode of regexp path building
      *         - rootless	: regexp without slash at begin
      *         - absolute	: regexp with slash at begin 
-     *
+     *	       
      * @return string the regexp path validation
      */
     private function getPathRegexp($option = "absolute")
@@ -747,17 +820,29 @@ class Url
     }
 
     /**
+     * Get host regexp 
+     *
      * @param  enum $option mode of regexp host building
      *         - dns		: regexp with dns requirements
      *         - ip_v4          : regexp with ip requirements 
-     *
+     *         - fuzzy		: regexp with both dns or ip requirements
+     * @param  bool $closureMode Define if the regexp is part (false) or terminal (true) regexp
      * @return string the regexp host validation among option selected
      */
-    private function getHostRegexp($option = "dns")
+    private function getHostRegexp($option = "dns",$closureMode=true)
     {
 	$host_regexp = null;    	
 	switch($option)
 	{
+		case 'fuzzy':
+			$host_regexp = "(".
+					self::REGEXP_HOST_SUBDOMAIN.
+					self::REGEXP_HOST_DOMAIN.
+					self::REGEXP_HOST_TOP_LEVEL_DOMAIN.
+					"|".
+					str_replace("domain","domain0",self::REGEXP_HOST_IPV4).
+					")";
+			break;
 		case 'ip_v4':
 			$host_regexp = self::REGEXP_HOST_IPV4;
 			break;		
@@ -767,23 +852,59 @@ class Url
 					self::REGEXP_HOST_DOMAIN.
 					self::REGEXP_HOST_TOP_LEVEL_DOMAIN;
 	}
-	return self::formatRegexp($host_regexp);
+	return self::formatRegexp($host_regexp,$closureMode);
     }
 
     /**
+     */
+    private function getCompleteURLRegexp($option='default')
+    {
+	switch($option)
+	{
+		case 'default':
+			$regexp = 
+				// scheme part
+				$this->getSchemeRegexp("fuzzy",false).
+				// host part
+				"(?<host>".$this->getHostRegexp("fuzzy",false).")".
+				// path part
+				"(?<path>".$this->getPathRegexp("absolute",false).")".
+				// query part
+				self::REGEXP_QUERY.
+				self::REGEXP_FRAGMENT
+				;
+			break;	
+		default:
+	}
+	return self::formatRegexp($regexp);
+    }
+
+    /**
+     * Get scheme regexp
+     *
      * @param  enum $option mode of regexp scheme building 
      *         - full 		: regexp with scheme protocol, punct and path 
      *         - scheme_only 	: regexp with scheme protocol
-     *
+     * 	       - fuzzy		: regexp with scheme protocol (optionnal)
+     * @param  bool $closureMode Define if the regexp is part (false) or terminal (true) regexp
      * @return string the regexp scheme validation among option selected
      */
-    private function getSchemeRegexp($option = "full")
+    private function getSchemeRegexp($option = "full",$closureMode=true)
     {
 	$scheme_regexp = null;
 	switch($option)
 	{
 		case 'scheme_only':
 			$scheme_regexp = self::REGEXP_SCHEME_PROTOCOL;
+			break;
+		case 'fuzzy':
+			$scheme_regexp = "(".
+				// example : "http://"
+				self::REGEXP_SCHEME_PROTOCOL.
+				self::REGEXP_SCHEME_COLUMN.
+				self::REGEXP_SCHEME_PATH_ABEMPTY.
+				"|".
+			")";
 			break;
 		case 'full':
 		default:
@@ -793,7 +914,7 @@ class Url
 				self::REGEXP_SCHEME_PATH_ABEMPTY;
 
 	}
-	return self::formatRegexp($scheme_regexp);
+	return self::formatRegexp($scheme_regexp,$closureMode);
     }
 
     /**
@@ -897,7 +1018,13 @@ class Url
      */
     public function __toString()
     {
-	$url = $this->getUrlWithoutQueryNorFragment();
+	try{
+		$url = $this->getUrlWithoutQueryNorFragment();
+	}
+	catch(\Exception $e)
+	{
+		echo $e->getMessage();die;
+	}	
 	if($this->getQuery())
 	{
 		$url.=self::VAR_INTERROGATION.$this->getQuery();
@@ -908,6 +1035,57 @@ class Url
 	}
 	return $url;
     }
+
+    /**
+     * Sanitize an url
+     *
+     * The object is to validate the URL construct and optionnaly return the normalized well-formed URL
+     * @param string $url Url to sanitize
+     * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false)
+     */
+    public function sanitize($url,$encodeURL=false)
+    {
+	$this->reset();
+	$regexp = $this->getCompleteURLRegexp();
+	if(preg_match($regexp,$url,$matches))
+	{
+		if(!empty($matches['scheme']))
+		{
+			$this->setScheme($matches['scheme']);
+		}
+		
+		if(!empty($matches['host']))
+		{
+			$this->setHost($matches['host']);
+		}
+
+		if(!empty($matches['path']))
+		{
+			$path = preg_replace("/^\//i","",$matches['path']);
+			$this->setPath($path);
+		}
+
+		if(!empty($matches['query']))
+		{
+			$this->setQuery($matches['query'],$encodeURL);
+		}
+
+		if(!empty($matches['fragment']))
+		{
+			$this->setFragment($matches['fragment'],$encodeURL);
+		}
+		
+	}
+	else
+	{
+		throw new InvalidUrlException(
+			InvalidUrlException::INVALID_SANITIZE_MESSAGE,
+			InvalidUrlException::INVALID_SANITIZE_CODE,
+			array('name' => $url)
+	);
+	}
+    }
+
     ///////////////////////////////// refactoring ////////////////////////////////////////
     const SCHEME_DEFAULT		= "http";
     const PORT_DEFAULT			= 80;

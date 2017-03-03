@@ -41,7 +41,7 @@ class RoadmapTest extends KernelTestCase
 				'path' => 'folder1/folder2/filename.txt', 
 				'fragment' => 'test',
 				'query' => 'ping=pong&test=0',
-				'equals' => 'http://www.google.fr:80/folder1/folder2/filename.txt?test=0&ping=pong#test'
+				'equals' => 'http://www.google.fr/folder1/folder2/filename.txt?test=0&ping=pong#test'
 			),
 			array(
 				'scheme' => 'http', 
@@ -50,7 +50,7 @@ class RoadmapTest extends KernelTestCase
 				'port_mode' => 'forced',
 				'attempted_port' => 80, 
 				'path' => 'folder/filename.txt',
-				'equals' => 'http://google.fr/folder/filename.txt',
+				'equals' => 'http://google.fr:80/folder/filename.txt',
 			),
 			array(
 				'scheme' => 'http', 
@@ -116,6 +116,39 @@ class RoadmapTest extends KernelTestCase
 		}
 	}
 	
+	/**
+         * step 2 - url validation
+         */
+	$url->reset();
+	$url->changePortMode('none');
+	$url->setScheme('http');
+	$url->setHost('www.lemonde.fr');
+	$url->setPath('bourse/article.html');
+	$url->setQuery('a=b&c é=u',true);
+	$url->setFragment('toté',true);
+	$this->assertTrue($url->isValid());
+	//print_r($url->getErrors());
+
+	/**
+	 * step 3 - url sanitization
+         */
+	$tests = 
+		array(
+			'http://www.google.fr' 	=> true,
+			'http://localhost'	=> true,
+			'unknown://localhost'	=> false,
+			'127.0.0.1'		=> true,
+			'localhost/fic.txt'	=> true,
+			'localhost/path/fic.txe'=> true,
+		);
+	foreach($tests as $url_test => $assert)
+	{
+		$url->reset();
+		$url->sanitize($url_test);
+		$this->assertTrue($url->hasErrors() !== $assert);
+		echo $url."\r\n";	
+	}
+
 	/**
 	$urls = array(
 		'https://www.ola.fr',

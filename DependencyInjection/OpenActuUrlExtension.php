@@ -27,6 +27,7 @@ class OpenActuUrlExtension extends Extension
 	
 
 	$container->setParameter('open_actu_url.url.schemes', $config['url']['schemes']);
+	$container->setParameter('open_actu_url.url.scheme_default', $config['url']['scheme_default']);		
 	$container->setParameter('open_actu_url.url.level_exception', $config['url']['level_exception']);
 	
 	$container->setParameter('open_actu_url.url.port.defaults', array());
