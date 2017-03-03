@@ -1,0 +1,20 @@
+Working With The OpenActuUrlBundle as service
+=============================================
+
+Calling the service
+-------------------
+
+The call is simply done with "open-actu.url.manager"::
+
+    <?php
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new OpenActu\UrlBundle\OpenActuUrlBundle(),
+            // ...
+        );
+    }
+

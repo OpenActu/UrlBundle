@@ -1,9 +1,10 @@
 Getting Started With OpenActu\UrlBundle
 =======================================
 
-The url component provides a single way that allows you to simply validate,
- manage and more the URL you must use.
+The url component provides a single way that allows you to simply validate, manage and more the URL you must use.
 
+This bundle has for goal the guaranty of consistency in crawling processes on the URL problematics.  
+ 
 Prerequisites
 -------------
 
