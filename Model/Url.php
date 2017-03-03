@@ -161,6 +161,11 @@ class Url
     private $fragment;
     
     /**
+     * @todo
+     */
+    private $userInfo;
+
+    /**
      * Array of active schemes (must be referenced in "open_actu_url.url.schemes" section in config.yml)
      */
     private static $active_schemes = array();
@@ -494,6 +499,51 @@ class Url
     }
 
     /**
+     * Retrieve the user information component of the URI.
+     *
+     * If no user information is present, this method MUST return an empty
+     * string.
+     *
+     * If a user is present in the URI, this will return that value;
+     * additionally, if the password is also present, it will be appended to the
+     * user value, with a colon (":") separating the values.
+     *
+     * The trailing "@" character is not part of the user information and MUST
+     * NOT be added.
+     *
+     * @return string The URI user information, in "username[:password]" format.
+     */
+    public function getUserInfo()
+    {
+	/**
+	 * @todo
+	 */
+	return $this->userInfo;
+    }
+
+    /**
+     * Retrieve the user information component of the URI.
+     *
+     * If no user information is present, this method MUST return an empty
+     * string.
+     *
+     * If a user is present in the URI, this will return that value;
+     * additionally, if the password is also present, it will be appended to the
+     * user value, with a colon (":") separating the values.
+     *
+     * The trailing "@" character is not part of the user information and MUST
+     * NOT be added.
+     *
+     * @return string The URI user information, in "username[:password]" format.
+     */
+    public function setUserInfo($userinfo)
+    {
+	/**
+	 * @todo
+	 */
+    }
+
+    /**
      * Retrieve the query string of the URI.
      *
      * If no query string is present, this method MUST return an empty string.
@@ -783,6 +833,7 @@ class Url
 	$this->filenameExtension= null;
 	$this->query		= null;
 	$this->fragment		= null;
+	$this->userInfo		= null;
     }
     
     /**
@@ -1085,382 +1136,5 @@ class Url
 	);
 	}
     }
-
-    ///////////////////////////////// refactoring ////////////////////////////////////////
-    const SCHEME_DEFAULT		= "http";
-    const PORT_DEFAULT			= 80;
-    const AUTHORITY_PATH_ABEMPTY	= "//";
-    const PATH_ABSOLUTE			= "/";
-    const POST_SCHEME_TAG		= ":";
-    const POST_FILENAME_TAG		= '.';
-    const PRE_QUERY_TAG			= '?';
-    const PRE_FRAGMENT			= '#';
-    const PATH_PATTERN			= "/(\/(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})(?<filename>[^?.\/]+)([.\/]{0,1})(?<filenameExtension>[^?]*)|\/|)/i";
-    const REGEXP_HOST			= "((?<subdomain>(([^\/.]+[.])*)[^\/.]+[.]){0,1})(?<domain>[^.\/]{3,})([.](?<domainExtension>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
-    const REGEXP_PORT			= "([:](?<port>\d+))?";
-    const REGEXP_PATH			= "(\/(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})(?<filename>[^?.\/]+)([.\/]{0,1})(?<filenameExtension>[a-z0-9\.]*)|\/|)";
-    const REGEXP_REST			= "(?<rest>.*)";
-
-    
-    private $encodeUrl = true;
-    
-    /**
-     * Define if url query parameters must be encoded or not
-     */
-    public function setEncodeUrl($option)
-    {
-	$this->encodeUrl = $option;
-    }
-    
-    private static function getCompleteRegexp()
-    {
-	return "/^".
-		self::REGEXP_SCHEME.
-		self::REGEXP_HOST.
-		self::REGEXP_PORT.
-		self::REGEXP_PATH.
-		self::REGEXP_QUERY.
-		self::REGEXP_FRAGMENT.
-		self::REGEXP_REST.
-		"$/i";
-		
-    }
-
-    
-
-    /**
-     * init path
-     */
-    public function initPath()
-    {
-	$this->filename		= null;
-	$this->filenameExtension= null;
-	$this->folder		= null;
-    }
-    /**
-     * Has scheme ?
-     */
-    public static function hasScheme($url)
-    {
-	return preg_match(self::getSchemeRegexp(),$url);
-    }
-    
-    /**
-     * Append default scheme if nothing is present
-     */
-    private static function appendDefaultScheme($url)
-    {
-	return self::SCHEME_DEFAULT.self::POST_SCHEME_TAG.self::AUTHORITY_PATH_ABEMPTY.$url;
-    }
-
-    /**
-     * Path builder
-     */
-    private function buildPath($folder,$filename,$filenameExtension)
-    {
-	$this->initPath();
-
-	if(!empty($folder)){
-		$folder	      = strtolower($folder);
-		$folder	      = preg_replace("/\/(\/+)([^\/]|$)/iU","/$2", $folder);				
-		$this->folder = $folder;
-	}
-
-	if(!empty($filename))
-		$this->filename = strtolower($filename);
-
-	if(!empty($filenameExtension))
-		$this->filenameExtension = strtolower($filenameExtension);
-    }
-
-    /**
-     * Load the current object with new URL
-     */
-    public function load($url=null)
-    {
-		
-
-		if(null === $url)
-		{
-			return false;
-		}
-		
-		if(!self::hasScheme($url))
-		{
-			$url = self::appendDefaultScheme($url);		
-		}
-		$url = trim($url);
-
-		if(preg_match(self::getCompleteRegexp(),$url,$matches)){
-				
-			if(!empty($matches['scheme']))
-				$this->scheme = strtolower($matches['scheme']);
-
-			if(!empty($matches['subdomain']))
-				$this->subdomain = strtolower(substr($matches['subdomain'],0,-1));
-
-			if(!empty($matches['domain']))
-				$this->domain = strtolower($matches['domain']);
-
-			if(!empty($matches['domainExtension']))
-				$this->domainExtension = strtolower($matches['domainExtension']);
-			
-			$folder  		= !empty($matches['folder']) ? $matches['folder'] : null;
-			$filename		= !empty($matches['filename']) ? $matches['filename'] : null;
-			$filenameExtension 	= !empty($matches['filenameExtension']) ? $matches['filenameExtension'] : null;
-			
-			$this->buildPath($folder, $filename, $filenameExtension);
-			
-			if(!empty($matches['port']))
-				$this->port = (int)$matches['port'];			
-  			
-			if(!empty($matches['query']))
-				$this->query = (string)$matches['query'];
-			
-			if(!empty($matches['fragment']))
-				$this->fragment = (string)$matches['fragment'];
-
-			return true;
-		}
-		
-		throw new InvalidArgumentException('you attempt to load an url with bad format (please consult the RFC3986 recommandations). Given : '.$url);
-
-	}    
-	
-    /**
-     * Retrieve the user information component of the URI.
-     *
-     * If no user information is present, this method MUST return an empty
-     * string.
-     *
-     * If a user is present in the URI, this will return that value;
-     * additionally, if the password is also present, it will be appended to the
-     * user value, with a colon (":") separating the values.
-     *
-     * The trailing "@" character is not part of the user information and MUST
-     * NOT be added.
-     *
-     * @return string The URI user information, in "username[:password]" format.
-     */
-    public function getUserInfo()
-    {
-    }
-
-
-
-
-
-    /**
-     * Return an instance with the specified scheme.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified scheme.
-     *
-     * Implementations MUST support the schemes "http" and "https" case
-     * insensitively, and MAY accommodate other schemes if required.
-     *
-     * An empty scheme is equivalent to removing the scheme.
-     *
-     * @param string $scheme The scheme to use with the new instance.
-     * @return static A new instance with the specified scheme.
-     * @throws \InvalidArgumentException for invalid or unsupported schemes.
-     */
-    public function withScheme($scheme)
-    {
-	if(true)
-	{
-	}
-	else
-	{
-		throw new InvalidArgumentException('invalid scheme given',502);
-	}
-    }
-
-    /**
-     * Return an instance with the specified user information.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified user information.
-     *
-     * Password is optional, but the user information MUST include the
-     * user; an empty string for the user is equivalent to removing user
-     * information.
-     *
-     * @param string $user The user name to use for authority.
-     * @param null|string $password The password associated with $user.
-     * @return static A new instance with the specified user information.
-     */
-    public function withUserInfo($user, $password = null)
-    {
-    }
-
-    /**
-     * Return an instance with the specified host.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified host.
-     *
-     * An empty host value is equivalent to removing the host.
-     *
-     * @param string $host The hostname to use with the new instance.
-     * @return static A new instance with the specified host.
-     * @throws \InvalidArgumentException for invalid hostnames.
-     */
-    public function withHost($host)
-    {
-	if(true)
-	{
-	}
-	else
-	{
-		throw new InvalidArgumentException('invalid host given',504);
-	}
-    }
-
-    /**
-     * Return an instance with the specified port.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified port.
-     *
-     * Implementations MUST raise an exception for ports outside the
-     * established TCP and UDP port ranges.
-     *
-     * A null value provided for the port is equivalent to removing the port
-     * information.
-     *
-     * @param null|int $port The port to use with the new instance; a null value
-     *     removes the port information.
-     * @return static A new instance with the specified port.
-     * @throws \InvalidArgumentException for invalid ports.
-     */
-    public function withPort($port)
-    {
-	$url = clone $this;
-	$url->port = $port;
-	return $url;
-    }
-
-    /**
-     * Return an instance with the specified path.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified path.
-     *
-     * The path can either be empty or absolute (starting with a slash) or
-     * rootless (not starting with a slash). Implementations MUST support all
-     * three syntaxes.
-     *
-     * If the path is intended to be domain-relative rather than path relative then
-     * it must begin with a slash ("/"). Paths not starting with a slash ("/")
-     * are assumed to be relative to some base path known to the application or
-     * consumer.
-     *
-     * Users can provide both encoded and decoded path characters.
-     * Implementations ensure the correct encoding as outlined in getPath().
-     *
-     * @param string $path The path to use with the new instance.
-     * @return static A new instance with the specified path.
-     * @throws \InvalidArgumentException for invalid paths.
-     */
-    public function withPath($path)
-    {
-	$url = clone $this;
-	
-	if(preg_match(self::PATH_PATTERN,$path,$matches))
-	{
-
-		$folder 		= !empty($matches['folder']) ? $matches['folder'] : null;
-		$filename		= !empty($matches['filename']) ? $matches['filename'] : null;
-		$filenameExtension	= !empty($matches['filenameExtension']) ? $matches['filenameExtension'] : null; 
-		
-		$url->buildPath($folder,$filename,$filenameExtension);		
-	}
-	else
-		throw new InvalidArgumentException('invalid path given',500);
-	return $url;
-    }
-
-    private function buildQuery($strQuery)
-    {
-	$complete_tab = array();
-
-	$tmp_tab = explode("&",$strQuery);
-	foreach($tmp_tab as $subQuery)
-	{
-		$data = explode("=",$subQuery);
-		
-		if(count($data) == 2)
-		{
-			$complete_tab[$data[0]]=$data[1];
-		}
-		elseif(count($data) == 1)
-		{
-			$complete_tab[$data[0]]=null;
-		}
-	}
-
-        $str = null;
-	
-	foreach($complete_tab as $key => $parameter){
-		if($this->encodeUrl)
-			$str.='&'.urlencode($key).'='.urlencode($parameter);
-		else
-			$str.='&'.$key.'='.$parameter;
-	}
-	
-	$this->query = substr($str,1);
-    }
-
-    /**
-     * Return an instance with the specified query string.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified query string.
-     *
-     * Users can provide both encoded and decoded query characters.
-     * Implementations ensure the correct encoding as outlined in getQuery().
-     *
-     * An empty query string value is equivalent to removing the query string.
-     *
-     * @param string $query The query string to use with the new instance.
-     * @return static A new instance with the specified query string.
-     * @throws \InvalidArgumentException for invalid query strings.
-     */
-    public function withQuery($query)
-    {
-	$url = clone $this;
-	if(empty($query))
-	{
-		$url->query = null;
-	}
-	else
-	{
-		$url->buildQuery($query);
-	}
-	
-	return $url;
-    }
-
-    /**
-     * Return an instance with the specified URI fragment.
-     *
-     * This method MUST retain the state of the current instance, and return
-     * an instance that contains the specified URI fragment.
-     *
-     * Users can provide both encoded and decoded fragment characters.
-     * Implementations ensure the correct encoding as outlined in getFragment().
-     *
-     * An empty fragment value is equivalent to removing the fragment.
-     *
-     * @param string $fragment The fragment to use with the new instance.
-     * @return static A new instance with the specified fragment.
-     */
-    public function withFragment($fragment)
-    {
-    }
-
-    
-
 }
 
