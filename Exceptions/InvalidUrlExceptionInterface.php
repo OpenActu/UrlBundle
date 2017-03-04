@@ -9,7 +9,7 @@ interface InvalidUrlExceptionInterface
 	const NO_SCHEME_FOUND_CODE		= 405;
 	const INVALID_HOST_MESSAGE		= 'the current host is invalid (given "%name%")';
 	const INVALID_HOST_CODE			= 406;
-	const NO_HOST_FOUND_MESSAGE		= 'no host given';
+	const NO_HOST_FOUND_MESSAGE		= 'no host given. This is accepted only with scheme of type "%scheme%" ("%current_scheme%" given)';
 	const NO_HOST_FOUND_CODE		= 407;
 	const INVALID_PORT_FORMAT_MESSAGE	= 'the current port is invalid (given "%name%")';
 	const INVALID_PORT_FORMAT_CODE		= 408;

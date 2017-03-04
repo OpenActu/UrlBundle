@@ -36,3 +36,5 @@ Now use the vendors script to clone the newly added repository into your project
 
 # Features
 
+* Basic management from setters/getters
+

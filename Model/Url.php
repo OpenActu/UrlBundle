@@ -39,24 +39,34 @@ class Url
     const VAR_INTERROGATION		= '?';
     const VAR_DIESE			= '#';
     const VAR_QUERY_AND			= '&';
-
+    const VAR_SCHEME_FILE		= 'file';
     /**
      *
      */
     const REGEXP_SCHEME_PROTOCOL	= "(?<scheme>[a-z0-9*]*)";
     const REGEXP_SCHEME_COLUMN  	= "[:]{0,1}";
-    const REGEXP_SCHEME_PATH_ABEMPTY 	= "\/\/";
-    const REGEXP_SLASH			= "\/";
-    const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^\/.]+[.])*)[^\/.]+)[.]){0,1})";
-    const REGEXP_HOST_DOMAIN		= "(?<domain>[^.\/]{3,})";
-    const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^\/.]{2,3}[.])*)[^\/.]{2,3}))?";
+    const REGEXP_SCHEME_PATH_ABEMPTY 	= "(\/\/|\\\\\\\\)";
+    const REGEXP_SLASH			= "(\/|\\\\)";
+    const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^\/\\\\.]+[.])*)[^\/\\\\.]+)[.]){0,1})";
+    const REGEXP_HOST_DOMAIN		= "(?<domain>[^.\/\\\\]{3,})";
+    const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^\/.\\\\]{2,3}[.])*)[^\/\\\\.]{2,}))?";
     const REGEXP_HOST_IPV4		= "(?<domain>(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))";
-    const REGEXP_PATH_FOLDER		= "(((?<folder>((([^\/]*)\/)*)([^\/]{1,100}))\/){0,1})";
-    const REGEXP_PATH_FILENAME		= "(?<filename>[^?\/]+)";
-    const REGEXP_PATH_FILENAME_EXTENSION= "(?<filenameExtension>[^?]*)";
+    const REGEXP_PATH_FOLDER		= "(((?<folder>((([^\/\\\\]*)[\/\\\\])*)([^\/\\\\]{1,100}))[\/\\\\]){0,1})";
+    const REGEXP_PATH_FILENAME		= "(?<filename>[^?\/\\\\]+)";
+    const REGEXP_PATH_FILENAME_EXTENSION= "(?<filenameExtension>[^\.\\\\\/]+?)";
     const REGEXP_QUERY			= "([?](?<query>[^#]*))?";
     const REGEXP_FRAGMENT		= "([#](?<fragment>.*))?";
 
+/**
+function mb_pathinfo($filepath) {
+    preg_match('%^(.*?)[\\\\/]*(([^/\\\\]*?)(\.([^\.\\\\/]+?)|))[\\\\/\.]*$%im',$filepath,$m);
+    if($m[1]) $ret['dirname']=$m[1];
+    if($m[2]) $ret['basename']=$m[2];
+    if($m[5]) $ret['extension']=$m[5];
+    if($m[3]) $ret['filename']=$m[3];
+    return $ret;
+}
+**/
     /**
      * Scheme component of the URI.
      *
@@ -257,16 +267,24 @@ class Url
    /**
      * Retrieve the host component of the URI.
      *
+     * An host can be nullable only if the scheme is of type file 
+     *
      * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
      * @return string The URI host.
      */
     public function getHost()
     {
+	if( (null === $this->domain) && ($this->scheme === self::VAR_SCHEME_FILE) )
+	{
+		return null;
+	}
+
 	if(null === $this->domain)
 	{
 		throw new InvalidUrlException(
 			InvalidUrlException::NO_HOST_FOUND_MESSAGE,
-			InvalidUrlException::NO_HOST_FOUND_CODE
+			InvalidUrlException::NO_HOST_FOUND_CODE,
+			array('scheme' => self::VAR_SCHEME_FILE,'current_scheme' => $this->getScheme())
 		);
 	}
 
@@ -319,11 +337,13 @@ class Url
 		return;
 	}
 	
+	/**
 	throw new InvalidUrlException(
 		InvalidUrlException::INVALID_HOST_MESSAGE,
 		InvalidUrlException::INVALID_HOST_CODE,
 		array('name' => $host)
 	);
+	*/
 	
     }
 
