@@ -44,29 +44,19 @@ class Url
      *
      */
     const REGEXP_SCHEME_PROTOCOL	= "(?<scheme>[a-z0-9*]*)";
-    const REGEXP_SCHEME_COLUMN  	= "[:]{0,1}";
-    const REGEXP_SCHEME_PATH_ABEMPTY 	= "(\/\/|\\\\\\\\)";
-    const REGEXP_SLASH			= "(\/|\\\\)";
-    const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^\/\\\\.]+[.])*)[^\/\\\\.]+)[.]){0,1})";
-    const REGEXP_HOST_DOMAIN		= "(?<domain>[^.\/\\\\]{3,})";
-    const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^\/.\\\\]{2,3}[.])*)[^\/\\\\.]{2,}))?";
+    const REGEXP_SCHEME_COLUMN  	= "[:]";
+    const REGEXP_SCHEME_PATH_ABEMPTY 	= "\/\/";
+    const REGEXP_SLASH			= "\/";
+    const REGEXP_HOST_SUBDOMAIN		= "(((?<subdomain>(([^(\/.?)]+[.])*)[^\/.]+)[.]){0,1})";
+    const REGEXP_HOST_DOMAIN		= "(?<domain>[^(.\/?)]{3,})";
+    const REGEXP_HOST_TOP_LEVEL_DOMAIN	= "([.](?<topLevelDomain>(([^(\/.?)]{2,3}[.])*)[^(\/.?)]{2,}))?";
     const REGEXP_HOST_IPV4		= "(?<domain>(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.](25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))";
-    const REGEXP_PATH_FOLDER		= "(((?<folder>((([^\/\\\\]*)[\/\\\\])*)([^\/\\\\]{1,100}))[\/\\\\]){0,1})";
-    const REGEXP_PATH_FILENAME		= "(?<filename>[^?\/\\\\]+)";
+    const REGEXP_PATH_FOLDER		= "(((?<folder>((([^\/]*)[\/])*)([^\/]{1,100}))[\/]){0,1})";
+    const REGEXP_PATH_FILENAME		= "(?<filename>[^?\/]+)";
     const REGEXP_PATH_FILENAME_EXTENSION= "(?<filenameExtension>[^\.\\\\\/]+?)";
     const REGEXP_QUERY			= "([?](?<query>[^#]*))?";
     const REGEXP_FRAGMENT		= "([#](?<fragment>.*))?";
 
-/**
-function mb_pathinfo($filepath) {
-    preg_match('%^(.*?)[\\\\/]*(([^/\\\\]*?)(\.([^\.\\\\/]+?)|))[\\\\/\.]*$%im',$filepath,$m);
-    if($m[1]) $ret['dirname']=$m[1];
-    if($m[2]) $ret['basename']=$m[2];
-    if($m[5]) $ret['extension']=$m[5];
-    if($m[3]) $ret['filename']=$m[3];
-    return $ret;
-}
-**/
     /**
      * Scheme component of the URI.
      *
@@ -117,7 +107,6 @@ function mb_pathinfo($filepath) {
      *
      * @var string Domain component
      * @see https://tools.ietf.org/html/rfc3986#section-3.1
-     * @Assert\NotBlank(message="The domain can not be blank")
      */
     private $domain;
     
@@ -329,6 +318,7 @@ function mb_pathinfo($filepath) {
 	}
 	
 	$regexp = $this->getHostRegexp('dns');
+	
 	if(preg_match($regexp,$host,$matches))
 	{
 		$this->subdomain	= (!empty($matches['subdomain'])) ? strtolower($matches['subdomain']) : null;
@@ -473,10 +463,11 @@ function mb_pathinfo($filepath) {
      * form (e.g., "%2F") to the instance.
      *
      * @param string $path Path 
+     * @param bool $encodeURL Option to protect the path area (DEFAULT=false) with RFC3986
      * @see https://tools.ietf.org/html/rfc3986#section-2
      * @see https://tools.ietf.org/html/rfc3986#section-3.3
      */
-    public function setPath($path)
+    public function setPath($path,$encodeURL=false)
     {
 	$this->folder 		= null;
 	$this->filename  	= null;
@@ -511,6 +502,11 @@ function mb_pathinfo($filepath) {
 			}
 			else
 				$this->filename = $matches['filename'];
+
+			if((null !== $this->filename) && (true === $encodeURL))
+			{
+				$this->filename = rawurlencode($this->filename);
+			}
 		}
 		return;
 	}
@@ -586,8 +582,6 @@ function mb_pathinfo($filepath) {
 	{
 		return self::queryToArray($this->query);
 	}
-	if(null === $this->query)
-		return "";
 
 	return $this->query;
     }
@@ -603,7 +597,7 @@ function mb_pathinfo($filepath) {
      * that value MUST be passed in encoded form (e.g., "%26") to the instance.
      *
      * @param string $query Query string
-     * @param bool $encodeURL (OPTIONAL) Encoding to URL recommandation
+     * @param bool $encodeURL (OPTIONAL) Encoding to URL recommandation RFC3986
      * @see https://tools.ietf.org/html/rfc3986#section-2
      * @see https://tools.ietf.org/html/rfc3986#section-3.4
      */
@@ -689,11 +683,9 @@ function mb_pathinfo($filepath) {
      */
     public function getFragment($decodeURL=false)
     {
-	if(null === $this->fragment)
-		return "";
 	
 	if(true === $decodeURL)
-		return urldecode($this->fragment);
+		return rawurldecode($this->fragment);
 
 	return $this->fragment;
     }
@@ -718,7 +710,7 @@ function mb_pathinfo($filepath) {
 		return;
 	
         if($encodeURL=== true)
-		$fragment = urlencode($fragment);
+		$fragment = rawurlencode($fragment);
 
 	$this->fragment = $fragment;
     }
@@ -849,7 +841,7 @@ function mb_pathinfo($filepath) {
 			$ttab = array();
 			foreach($tab as $key => $value)
 			{
-				$ttab[urldecode($key)] = urldecode($value);
+				$ttab[rawurldecode($key)] = rawurldecode($value);
 			}
 			$tab = $ttab;
 		}
@@ -865,7 +857,7 @@ function mb_pathinfo($filepath) {
      * If value is not a scalar, the key/value is ignored to the rendering of query
      *
      * @param array $array Array of parameters in key/value mode
-     * @param bool $encodeUrl Option to encode key/value set (DEFAULT=false)
+     * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false) with RFC3986
      * @return string Query well formed
      */
     public static function arrayToQuery(array $array,$encodeUrl=false)
@@ -881,7 +873,7 @@ function mb_pathinfo($filepath) {
 					$query.=self::VAR_QUERY_AND;
 
 				if($encodeUrl === true)
-					$query.=urlencode($key).'='.urlencode($value);
+					$query.=rawurlencode($key).'='.rawurlencode($value);
 				else
 					$query.=$key.'='.$value;
 			}
@@ -1056,7 +1048,7 @@ function mb_pathinfo($filepath) {
 				// scheme part
 				$this->getSchemeRegexp("fuzzy",false).
 				// host part
-				"(?<host>".$this->getHostRegexp("fuzzy",false).")".
+				"(?<host>".$this->getHostRegexp("fuzzy",false)."|)".
 				// path part
 				"(?<path>".$this->getPathRegexp("absolute",false).")".
 				// query part
@@ -1231,13 +1223,38 @@ function mb_pathinfo($filepath) {
      *
      * The object is to validate the URL construct and optionnaly return the normalized well-formed URL
      * @param string $url Url to sanitize
-     * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false)
+     * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false) with RFC3986
      */
     public function sanitize($url,$encodeURL=false)
     {
 	$this->reset();
 	$regexp = $this->getCompleteURLRegexp();
 
+ 	$url = trim($url);
+	
+	/**
+ 	 * hack
+	 * ====
+	 * in case of url with format "/..." at start,
+	 * there is conversion to "file:///"
+         */
+	$url = preg_replace("/^\//i",self::VAR_SCHEME_FILE.self::VAR_COLUMN.self::VAR_PATH_ABEMPTY.self::VAR_SLASH,$url);
+
+	/**
+	 * hack
+	 * ====
+  	 * in case of windows filesystem at start,
+         * there is conversion to "file:///"
+	 */
+	if(preg_match("/^([a-z]{1}[:])/i",$url))
+	{
+		$url = preg_replace(
+			"/^([a-z]{1}[:])/i",
+			self::VAR_SCHEME_FILE.self::VAR_COLUMN.self::VAR_PATH_ABEMPTY.self::VAR_SLASH."$1",
+			$url
+		);
+		$url = str_replace('\\','/',$url);
+	}
 	if(preg_match($regexp,$url,$matches))
 	{
 		if(!empty($matches['scheme']))
@@ -1253,7 +1270,7 @@ function mb_pathinfo($filepath) {
 		if(!empty($matches['path']))
 		{
 			$path = preg_replace("/^\//i","",$matches['path']);
-			$this->setPath($path);
+			$this->setPath($path,$encodeURL);
 		}
 
 		if(!empty($matches['query']))
