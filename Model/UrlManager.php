@@ -3,6 +3,7 @@ namespace OpenActu\UrlBundle\Model;
 
 use Symfony\Component\DependencyInjection\Container;
 use OpenActu\UrlBundle\Model\Url;
+use OpenActu\UrlBundle\Model\Request;
 use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
 use OpenActu\UrlBundle\Model\Exception\UrlExceptions;
 class UrlManager
@@ -17,7 +18,13 @@ class UrlManager
 
    	const 	SCHEME_DEFAULT		= "http";
 
+	const   METHOD_GET		= "get";
+	const	METHOD_POST		= "post";
+	
+	const 	REQUEST_TIMEOUT		= 10;
+
 	private $url;
+	private $request;
 	private $container;
 	private $errors;
 	
@@ -133,6 +140,73 @@ class UrlManager
 		}
         }
 
+        /**
+         * Retrieve current folder
+	 *
+	 * The folder is part of Path
+         * @return string|null Folder
+	 */
+        public function getFolder()
+        {
+	 	return $this->url->getFolder();
+	}
+
+        /**
+         * Retrieve current filename
+	 *
+	 * The filename is part of Path
+         * @return string|null Filename
+	 */
+        public function getFilename()
+        {
+	 	return $this->url->getFilename();
+	}
+
+        /**
+         * Retrieve current filename extension
+	 *
+	 * The filename extension is part of Path
+         * @return string|null Filename extension
+	 */
+        public function getFilenameExtension()
+        {
+	 	return $this->url->getFilenameExtension();
+	}
+
+        /**
+         * Retrieve current subdomain
+	 *
+	 * The subdomain is part of Host
+         * @return string|null Subdomain
+	 */
+        public function getSubdomain()
+        {
+	 	return $this->url->getSubdomain();
+	}
+
+        /**
+         * Retrieve current domain
+	 *
+	 * The domain is part of Host
+         * @return string Domain
+	 */
+        public function getDomain()
+        {
+	 	return $this->url->getDomain();
+	}
+
+
+        /**
+         * Retrieve current top level domain
+	 *
+	 * The top level domain is part of Host
+         * @return string Top level domain
+	 */
+        public function getTopLevelDomain()
+        {
+	 	return $this->url->getTopLevelDomain();
+	}
+
 	/**
 	 * Retrieve current Path
          * @return string|null path
@@ -224,8 +298,29 @@ class UrlManager
 		$level_exception	= $container->getParameter('open_actu_url.url.level_exception');
 		$this->errors		= new UrlExceptions($level_exception);
 		
+		$method			= $container->getParameter('open_actu_url.url.protocol.method');
+		$this->request		= new Request($method,10);
 	}
-	
+
+	/**
+	 * send request and return response
+         *
+	 * @return string|null Response 
+         */	
+	public function send()
+	{
+		try
+		{
+			$parameters = $this->url->getQuery(true);
+			$strict_url = $this->url->getUrlWithoutQueryNorFragment();
+			$this->request->send($strict_url,$parameters);
+		}
+		catch(InvalidUrlException $e)
+		{
+			$this->errors->add($e->getMessage(),$e->getCode());
+		}
+	}
+
 	/**
 	 * reset url parameters and errors bag
    	 *

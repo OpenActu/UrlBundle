@@ -383,8 +383,8 @@ class Url
      *
      * The port must be an integer.
      * 
-     * @param int $port	Port 
-     * @throws InvalidUrlException if the port is not an integer
+     * @param int|null $port	Port 
+     * @throws InvalidUrlException if the port is not an integer nor null 
      */
     public function setPort($port)
     {
@@ -395,6 +395,10 @@ class Url
 	{
 		$this->port = (int)$port;
 		return;	
+	}
+	elseif($port === null)
+	{
+		return;
 	}
 
 	throw new InvalidUrlException(
@@ -551,12 +555,17 @@ class Url
      * The leading "?" character is not part of the query and MUST NOT be
      * added.
      *
+     * @param bool $toArray Option to send in array format
      * @see https://tools.ietf.org/html/rfc3986#section-2
      * @see https://tools.ietf.org/html/rfc3986#section-3.4
      * @return string The URI query string.
      */
-    public function getQuery()
+    public function getQuery($toArray=false)
     {
+	if($toArray === true)
+	{
+		return self::queryToArray($this->query);
+	}
 	if(null === $this->query)
 		return "";
 
@@ -587,6 +596,60 @@ class Url
 	$tab = self::queryToArray($query,false);
 	$new_query = self::arrayToQuery($tab,$encodeURL);
 	$this->query = $new_query;
+    }
+    
+    /**
+     * Retrieve the folder component of the URL.
+     *
+     * The folder is the first part of the path element as described below
+     *
+     *  -------(/*)-------/(.?)-----(.*)-----(.------------------?)
+     *  \________________/ \________________/\____________________/
+     *         folder           filename       filenameExtension
+     *  \_________________________________________________________/
+     *			 	 path
+     *
+     * @return string|null the URL folder
+     */
+    public function getFolder()
+    {
+	return $this->folder;
+    }
+
+    /**
+     * Retrieve the filename component of the URL.
+     *
+     * The filename is the second part of the path element as described below
+     *
+     *  -------(/*)-------/(.?)-----(.*)-----(.------------------?)
+     *  \________________/ \________________/\____________________/
+     *         folder           filename       filenameExtension
+     *  \_________________________________________________________/
+     *			 	 path
+     *
+     * @return string|null the URL filename
+     */
+    public function getFilename()
+    {
+	return $this->filename;
+    }
+
+    /**
+     * Retrieve the filename extension component of the URL.
+     *
+     * The filename extension is the third part of the path element as described below
+     *
+     *  -------(/*)-------/(.?)-----(.*)-----(.------------------?)
+     *  \________________/ \________________/\____________________/
+     *         folder           filename       filenameExtension
+     *  \_________________________________________________________/
+     *			 	 path
+     *
+     * @return string|null the URL filename
+     */
+    public function getFilenameExtension()
+    {
+	return $this->filenameExtension;
     }
 
     /**
@@ -667,6 +730,62 @@ class Url
 	}
 	return $authority;
     }
+
+    /**
+     * Retrieve the subdomain component of the URL.
+     *
+     * The subdomain is the first part of the host (only in DNS view) element as described below
+     *
+     *  ----------------------:----------------------@---------(.?)---------.----------------------.----------------------
+     *  \____________________/ \____________________/ \____________________/ \____________________/ \____________________/
+     *         username               password              subdomain               domain             topLevelDomain
+     *  \________________________________________________________________________________________________________________/
+     *			 	                          host
+     *
+     * @return string|null the URL subdomain
+     */
+    public function getSubdomain()
+    {
+	return $this->subdomain;
+    }
+
+    /**
+     * Retrieve the domain component of the URL.
+     *
+     * The domain is the second part of the host (only in DNS view) element OR the IP address (only in IP view) as 
+     * described below
+     *
+     *  ----------------------:----------------------@---------(.?)---------.----------------------.----------------------
+     *  \____________________/ \____________________/ \____________________/ \____________________/ \____________________/
+     *         username               password              subdomain               domain             topLevelDomain
+     *  \________________________________________________________________________________________________________________/
+     *			 	                          host
+     *
+     * @return string the URL domain
+     */
+    public function getDomain()
+    {
+	return $this->domain;
+    }
+
+    /**
+     * Retrieve the top level domain component of the URL.
+     *
+     * The top level domain is the third part of the host (only in DNS view) element as described below
+     *
+     *  ----------------------:----------------------@---------(.?)---------.----------------------.----------------------
+     *  \____________________/ \____________________/ \____________________/ \____________________/ \____________________/
+     *         username               password              subdomain               domain             topLevelDomain
+     *  \________________________________________________________________________________________________________________/
+     *			 	                          host
+     *
+     * @return string|null the URL domainExtension
+     */
+    public function getTopLevelDomain()
+    {
+	return $this->topLevelDomain;
+    }
+
 
     /**
      * Retrieve the keys from the query
@@ -1098,6 +1217,7 @@ class Url
     {
 	$this->reset();
 	$regexp = $this->getCompleteURLRegexp();
+
 	if(preg_match($regexp,$url,$matches))
 	{
 		if(!empty($matches['scheme']))
@@ -1133,7 +1253,7 @@ class Url
 			InvalidUrlException::INVALID_SANITIZE_MESSAGE,
 			InvalidUrlException::INVALID_SANITIZE_CODE,
 			array('name' => $url)
-	);
+		);
 	}
     }
 }

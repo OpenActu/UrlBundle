@@ -20,4 +20,10 @@ interface InvalidUrlExceptionInterface
         const INVALID_VALIDATION_CODE		= 411;
         const INVALID_SANITIZE_MESSAGE		= 'the current url can\'t be sanitized (given "%name%")';
 	const INVALID_SANITIZE_CODE		= 412;
+        const CURL_NOT_ACTIVATED_MESSAGE	= 'curl is not activated on your system. Please activate it';
+	const CURL_NOT_ACTIVATED_CODE		= 413;
+	const UNKNOWN_RESPONSE_MESSAGE		= 'error detected during the reply process (response: "%name%")';
+	const UNKNOWN_RESPONSE_CODE		= 414;
+	const BAD_RESPONSE_MESSAGE		= 'error detected during the reply process (http code: %http_code%)';
+	const BAD_RESPONSE_CODE			= 415;
 }

@@ -37,6 +37,8 @@ class OpenActuUrlExtension extends Extension
 	$container->setParameter('open_actu_url.url.port.mode', UrlManager::PORT_MODE_NONE);
 	if(!empty($config['url']) && !empty($config['url']['port']) && !empty($config['url']['port']['mode']))
 		$container->setParameter('open_actu_url.url.port.mode', $config['url']['port']['mode']);
-		
+	
+	$container->setParameter('open_actu_url.url.protocol.method', $config['url']['protocol']['method']);
+	$container->setParameter('open_actu_url.url.protocol.timeout', $config['url']['protocol']['timeout']);
     }
 }
