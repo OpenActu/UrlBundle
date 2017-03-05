@@ -25,6 +25,8 @@ class RoadmapSendTest extends KernelTestCase
     
     private function validateService()
     {
+
+	$usm= $this->container->get('open-actu.url_storage.manager');		
 	$um = $this->container->get('open-actu.url.manager');
 	
 	/************************************************
@@ -44,7 +46,7 @@ class RoadmapSendTest extends KernelTestCase
 				'port_mode' => 'normal'
 			),
 			'data' => array(
-				'url' => 'http://www.lepoiwwwnt.fr/automobile/securite/segolene-royal-favorable-a-une-interdiction-complete-des-voitures-diesel-22-12-2016-2092285_657.php?test=toto#test',
+				'url' => 'http://www.lepoint.fr/automobile/securite/segolene-royal-favorable-a-une-interdiction-complete-des-voitures-diesel-22-12-2016-2092285_657.php?test=toto#test',
 			),
 			'render' => array(
 				
@@ -66,27 +68,32 @@ class RoadmapSendTest extends KernelTestCase
 		// Configuration settings
 		$um->changePortMode($config['port_mode']);
 		
-		// Data settings		
-		$um->sanitize($data['url'],true);
-		$link = new LinkTest();
-		$um->send($link);
+		// Data settings	
+		
+		/**
+		 * sanitize area - first step to work
+		 */
+		$link = $um->sanitize(LinkTest::class,$data['url'],true);
+		# we push (this is not obligatory)
+//		$usm->push($link);
 
-		// Validation step
-		if($um->hasErrors())
+		if(null !== $link && !$um->hasErrors())
 		{
-			foreach($um->getErrors() as $error)
-			{
-				echo $error->getMessage().' # '.$error->getCode();
-			}
+			/**
+			 * now we can send request and receive response
+			 */
+			$um->send($link);
+			
+			/**
+			 * we can store the object in database
+			 */
+			$usm->push($link);
+
 		}
-		else
+		elseif($um->hasErrors())
 		{
-			/** @todo **/
-		}
-		$em = $this->container->get('doctrine.orm.entity_manager');
-		$em->persist($link);
-		$em->flush();			
- 
+			$usm->push($link);
+		}		
 	}
    }
 }
