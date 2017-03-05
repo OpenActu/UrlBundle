@@ -7,6 +7,8 @@ use OpenActu\UrlBundle\Model\Request;
 use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
 use OpenActu\UrlBundle\Model\Exception\UrlExceptions;
 use OpenActu\UrlBundle\Entity\UrlAnalyzer;
+use OpenActu\UrlBundle\DBAL\EnumUrlAnalyzerStatusType;
+
 class UrlManager
 {
 
@@ -322,6 +324,7 @@ class UrlManager
 		}
 		catch(InvalidUrlException $e)
 		{
+			$object->setRequestErrorMessage($e->getMessage());
 			$this->errors->add($e->getMessage(),$e->getCode());
 		}
 	}
@@ -413,16 +416,34 @@ class UrlManager
          * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false)
          * @return bool The url validation result
          */
-	public function sanitize($url,$encodeURL=false)
+	public function sanitize($classname,$url,$encodeURL=false)
 	{
+
+		$object = new $classname();
+		
 		try
 		{
 			$this->url->sanitize($url,$encodeURL);
-			return $this->isValid();
+			$object->setRequestQuery($this->url->getQuery());
+			$object->setRequestFragment($this->url->getFragment());
+			$object->setRequestUri((string)$this->url);		
+			$object->setRequestScheme($this->url->getScheme());
+			$object->setRequestSubdomain($this->url->getSubdomain());
+			$object->setRequestDomain($this->url->getDomain());
+			$object->setRequestTopLevelDomain($this->url->getTopLevelDomain());
+			$object->setRequestPath($this->url->getPath());
+			$object->setRequestFolder($this->url->getFolder());
+			$object->setRequestFilename($this->url->getFilename());
+			$object->setRequestFilenameExtension($this->url->getFilenameExtension());
+			$object->setRequestHost($this->url->getHost());
+			$object->setStatus(EnumUrlAnalyzerStatusType::STATUS_SANITIZED);
+			$object->setResponse(null);
+			return $object;
 		}
 		catch(InvalidUrlException $e)
 		{
 			$this->errors->add($e->getMessage(),$e->getCode());
 		}
+		return null;
 	}
 }

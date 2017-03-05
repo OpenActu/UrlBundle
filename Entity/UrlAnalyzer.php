@@ -3,6 +3,7 @@
 namespace OpenActu\UrlBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 /**
  * UrlAnalyser
  *
@@ -1331,9 +1332,14 @@ abstract class UrlAnalyzer
     /**
      * @ORM\PrePersist
      */
-    public function onPrePersist()
+    public function onPrePersist(LifecycleEventArgs $event)
     {
-	$this->createdAt = new \DateTime();
+	
+		/**
+		 * createdAt
+	         */
+		$this->createdAt = new \DateTime();
+		
     }
     
 }

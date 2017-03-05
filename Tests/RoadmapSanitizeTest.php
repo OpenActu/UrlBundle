@@ -2,6 +2,7 @@
 namespace OpenActu\UrlBundle\Tests;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use OpenActu\UrlBundle\Entity\LinkTest;
 class RoadmapSanitizeTest extends KernelTestCase
 {
     private $container;
@@ -157,7 +158,7 @@ class RoadmapSanitizeTest extends KernelTestCase
 		$um->changePortMode($config['port_mode']);
 		
 		// Data settings
-		$um->sanitize($data['url'],true);
+		$link = $um->sanitize(LinkTest::class,$data['url'],true);
 		
 		// Validation step
 		if($um->hasErrors())

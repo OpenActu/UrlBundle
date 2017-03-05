@@ -5,7 +5,6 @@ namespace OpenActu\UrlBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use OpenActu\UrlBundle\Entity\UrlAnalyzer;
 use OpenActu\UrlBundle\Entity\LinkResponseTest;
-
 /**
  * LinkTest
  *
@@ -14,8 +13,13 @@ use OpenActu\UrlBundle\Entity\LinkResponseTest;
  */
 class LinkTest extends UrlAnalyzer{
 	
+	
 	public function __construct()
 	{
 		$this->setResponse(new LinkResponseTest());
+	}
+	public function getResponseClass()
+	{
+		return LinkResponseTest::class;
 	}
 }

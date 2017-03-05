@@ -2,4 +2,7 @@ services:
     open-actu.url.manager:
         class: OpenActu\UrlBundle\Model\UrlManager
         arguments: [ "@service_container" ]
-        
+
+    open-actu.url_storage.manager:
+        class: OpenActu\UrlBundle\Model\UrlStorageManager
+        arguments: [ "@service_container" ]
