@@ -26,4 +26,6 @@ interface InvalidUrlExceptionInterface
 	const UNKNOWN_RESPONSE_CODE		= 414;
 	const BAD_RESPONSE_MESSAGE		= 'error detected during the reply process (http code: %http_code%)';
 	const BAD_RESPONSE_CODE			= 415;
+	const INVALID_SEND_METHOD_MESSAGE	= 'sender for %scheme% doesn\'t exist in the class OpenActu\\UrlBundle\\Model\\Request. To solve it, you must add a method named "%method%" on this class';
+	const INVALID_SEND_METHOD_CODE		= 416;
 }

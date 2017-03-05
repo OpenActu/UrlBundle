@@ -6,6 +6,7 @@ use OpenActu\UrlBundle\Model\Url;
 use OpenActu\UrlBundle\Model\Request;
 use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
 use OpenActu\UrlBundle\Model\Exception\UrlExceptions;
+use OpenActu\UrlBundle\Entity\UrlAnalyzer;
 class UrlManager
 {
 
@@ -305,15 +306,19 @@ class UrlManager
 	/**
 	 * send request and return response
          *
+         * @param \OpenActu\UrlBundle\Entity\UrlAnalyzer $object
+         * @param bool $urlEncode
+	 * @param array $options
 	 * @return string|null Response 
          */	
-	public function send()
+	public function send(UrlAnalyzer &$object,$urlEncode=true, array $parameters = array())
 	{
 		try
 		{
-			$parameters = $this->url->getQuery(true);
-			$strict_url = $this->url->getUrlWithoutQueryNorFragment();
-			$this->request->send($strict_url,$parameters);
+			$parameters['query'] = $this->url->getQuery($urlEncode);
+			$parameters['fragment'] = $this->url->getFragment($urlEncode);
+			
+			$this->request->sendRequest($object,$this->url,$parameters);
 		}
 		catch(InvalidUrlException $e)
 		{
