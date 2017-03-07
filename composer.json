@@ -1,9 +1,9 @@
 {
     "name": "open-actu/url",
     "description": "Url sanitization, validation and storage",
-    "keywords": ["url sanitization","url parsing", "url validation","url storage"]
+    "keywords": ["url sanitization","url parsing", "url validation","url storage"],
     "type": "symfony-bundle",
-    "license": "GNU",
+    "license": "MIT",
     "authors": [
         {
             "name": "yanroussel",
