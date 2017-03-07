@@ -90,10 +90,26 @@ two modes are availabled : "INFO" and "ERROR"
 Scheme validation
 =================
 
-The use of 'sfp://localhost/myspace/filename.html' produce an error 'the current scheme is invalid (given "sfp"). Check your configuration to accept this scheme'. 
+Suppose we want sanitize 'sfp://localhost/myspace/filename.html'. It produce an error 'the current scheme is invalid (given "sfp"). Check your configuration to accept this scheme'. 
 
 The schemes acceptation is defined in the app config.yml in area "open_actu_url > url > schemes".
 
 ===============
 Port management
 ===============
+
+You can define a default port for each scheme (see "open_actu_url > port > defaults section). You can manage the format output of the port. We have three modes availabled in section "open_actu_url > port > mode" : "normal", "forced" and "none".
+
+* normal : If the port is the standard port used with the current scheme, the port will be omitted.
+* forced : force the port information. If port is not given, the port takes the default port relative to the current scheme
+* none : use port only if the information is done
+
+You can manage this option dynamically by the "changePortMode" method.
+
+=======
+example
+=======
+
+.. code_block:: php
+
+    $um->changePortMode('normal');
