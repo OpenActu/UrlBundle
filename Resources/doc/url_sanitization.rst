@@ -114,7 +114,7 @@ example
 
     // in your controller
     $um = $this->get('open-actu.url.manager');
-
+    $um->changePortMode('normal');
 
 Conclusion
 ----------
