@@ -1,8 +1,9 @@
 {
     "name": "open-actu/url",
     "description": "Url sanitization, validation and storage",
+    "keywords": ["url sanitization","url parsing", "url validation","url storage"]
     "type": "symfony-bundle",
-    "license": "MIT",
+    "license": "GNU",
     "authors": [
         {
             "name": "yanroussel",
@@ -12,8 +13,6 @@
         }
     ],
     "require": {
-        "symfony/framework-bundle": ">=2.3",
-        "psr/http-message": ">=1.0"
     },
     "autoload": {
         "psr-0": { "OpenActu\\UrlBundle": "" }

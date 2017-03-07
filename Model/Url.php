@@ -21,7 +21,6 @@ namespace OpenActu\UrlBundle\Model;
  *
  * @link http://tools.ietf.org/html/rfc3986 (the URI specification)
  */
-use Psr\Http\Message\UriInterface;
 use OpenActu\UrlBundle\Exceptions\InvalidArgumentException;
 use OpenActu\UrlBundle\Exceptions\InvalidUrlException;
 use Symfony\Component\Validator\Constraints as Assert;
