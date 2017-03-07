@@ -59,5 +59,33 @@ The sanitization is managed with service "open-actu.url.manager". Then let's go 
     var_dump($um->getHost());          // return null
     echo $um;                          // return 'file:///path/subpath/filename.txt'
     echo $um->getScheme();                      // return 'file'
+    
+    if($um->hasErrors())
+    {
+        foreach($um->getErrors() as $error)
+        {
+            echo $error->getMessage().' # '.$error->getCode();
+        }
+    }
 
 As we can see, we want to sanitize this URL and it works. But what's append if we change the URL with 'localhost/myspace/filename.html'. The sanitization works but if you check, the scheme is 'http', the domain is 'path' and the folder become 'subpath'. This is because the sanitize method "guess" that the URL must work "with a maximum of efficiency" as an http request.   
+
+Error management
+----------------
+
+In this bundle, the production of errors is managed either a throwable exception who stop the process or singles messages managed with methods "hasErrors()" and "getErrors()". This comportment depend of the value of parameter open_actu_url > url > level_exception. 
+
+two modes are availabled : "INFO" and "ERROR"
+
+* INFO : this mode store exception in a exception bag. The exceptions can be retrieved with method "getExceptions" on service manager
+* ERROR: this mode provide an UrlException at the first error detected 
+
+Scheme validation
+-----------------
+
+The use of 'sfp://localhost/myspace/filename.html' produce an error 'the current scheme is invalid (given "sfp"). Check your configuration to accept this scheme'. 
+
+The schemes acceptation is defined in the app config.yml in area "open_actu_url > url > schemes". You can 
+A bit of config
+---------------
+
