@@ -113,3 +113,8 @@ example
 .. code_block:: php
 
     $um->changePortMode('normal');
+
+Conclusion
+----------
+
+You see the basic capability of the sanitization. You're ready to read the next chapter.
