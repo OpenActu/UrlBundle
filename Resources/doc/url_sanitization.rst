@@ -152,5 +152,4 @@ example
 Conclusion
 ----------
 
-You see the basic capability of the sanitization. You're ready to read the next chapter.
-[build your entity URL](https://github.com/OpenActu/UrlBundle/blob/master/Resources/doc/work_with_url_entity.rst)
+You see the basic capability of the sanitization. You're ready to read the next chapter : `build your entity URL <https://github.com/OpenActu/UrlBundle/blob/master/Resources/doc/work_with_url_entity.rst>`_
