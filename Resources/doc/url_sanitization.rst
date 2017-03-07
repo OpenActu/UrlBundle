@@ -44,3 +44,20 @@ Path section
      \_________________________________________________________/
                               path
 
+Our first use : basic sanitization 
+----------------------------------
+
+The sanitization is managed with service "open-actu.url.manager". Then let's go !
+
+.. code-block:: php
+
+    // in your controller
+    $um = $this->get('open-actu.url.manager');
+	$um->sanitize(null,'/path/subpath/filename.txt');
+    echo $um->getFilenameExtension();  // return 'txt'
+    echo $um->getFolder();             // return 'path/subpath'
+    var_dump($um->getHost());          // return null
+    echo $um;                          // return 'file:///path/subpath/filename.txt'
+    echo $um->getScheme();                      // return 'file'
+
+As we can see, we want to sanitize this URL and it works. But what's append if we change the URL with 'localhost/myspace/filename.html'. The sanitization works but if you check, the scheme is 'http', the domain is 'path' and the folder become 'subpath'. This is because the sanitize method "guess" that the URL must work "with a maximum of efficiency" as an http request.   
