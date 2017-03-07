@@ -1,4 +1,0 @@
-open_actu_url:
-    url:
-        # declare here the list of valid schemes, another schemes were refused
-        schemes: [ "http", "https" ]

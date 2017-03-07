@@ -81,5 +81,6 @@ Congratulation, you can use this bundle !
 
 # Features
 
-The source of the documentation is stored in the `Resources/doc/` folder
+The source of the documentation is stored in the `Resources/doc/` folder :
 
+[sanitize url](https://github.com/OpenActu/UrlBundle/blob/master/Resources/doc/url_sanitization.rst)
