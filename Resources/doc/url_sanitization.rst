@@ -110,9 +110,11 @@ You can manage this option dynamically by the "changePortMode" method.
 example
 =======
 
-.. code_block:: php
+.. code-block:: php
 
-    $um->changePortMode('normal');
+    // in your controller
+    $um = $this->get('open-actu.url.manager');
+
 
 Conclusion
 ----------
