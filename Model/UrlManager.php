@@ -412,32 +412,38 @@ class UrlManager
          *
          * The object is to validate the URL construct and optionnaly return the normalized well-formed URL
 	 *
+         * @param string $classname the classname object returned
 	 * @param string $url Url to sanitize
          * @param bool $encodeURL Option to protect the query and fragment area (DEFAULT=false)
          * @return bool The url validation result
          */
 	public function sanitize($classname,$url,$encodeURL=false)
 	{
-
-		$object = new $classname();
+	
+		$object = null;	
+		if(null !== $classname)
+			$object = new $classname();
 		
 		try
 		{
 			$this->url->sanitize($url,$encodeURL);
-			$object->setRequestQuery($this->url->getQuery());
-			$object->setRequestFragment($this->url->getFragment());
-			$object->setRequestUri((string)$this->url);		
-			$object->setRequestScheme($this->url->getScheme());
-			$object->setRequestSubdomain($this->url->getSubdomain());
-			$object->setRequestDomain($this->url->getDomain());
-			$object->setRequestTopLevelDomain($this->url->getTopLevelDomain());
-			$object->setRequestPath($this->url->getPath());
-			$object->setRequestFolder($this->url->getFolder());
-			$object->setRequestFilename($this->url->getFilename());
-			$object->setRequestFilenameExtension($this->url->getFilenameExtension());
-			$object->setRequestHost($this->url->getHost());
-			$object->setStatus(EnumUrlAnalyzerStatusType::STATUS_SANITIZED);
-			$object->setResponse(null);
+			if(null !== $object)
+			{			
+				$object->setRequestQuery($this->url->getQuery());
+				$object->setRequestFragment($this->url->getFragment());
+				$object->setRequestUri((string)$this->url);		
+				$object->setRequestScheme($this->url->getScheme());
+				$object->setRequestSubdomain($this->url->getSubdomain());
+				$object->setRequestDomain($this->url->getDomain());
+				$object->setRequestTopLevelDomain($this->url->getTopLevelDomain());
+				$object->setRequestPath($this->url->getPath());
+				$object->setRequestFolder($this->url->getFolder());
+				$object->setRequestFilename($this->url->getFilename());
+				$object->setRequestFilenameExtension($this->url->getFilenameExtension());
+				$object->setRequestHost($this->url->getHost());
+				$object->setStatus(EnumUrlAnalyzerStatusType::STATUS_SANITIZED);
+				$object->setResponse(null);
+			}
 			return $object;
 		}
 		catch(InvalidUrlException $e)
