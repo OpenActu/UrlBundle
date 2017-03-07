@@ -69,4 +69,17 @@ Now you need to add the config url in the main config file 'app/config/config.ym
                 method: "get"
                 timeout: 10
 
+Finally, you must add a mapping type in the doctrine area (allways in 'app/config/config.yml')
+
+    doctrine:
+        dbal:
+            ...
+            mapping_types:
+                enum: string
+
+Congratulation, you can use this bundle !
+
 # Features
+
+The source of the documentation is stored in the `Resources/doc/` folder
+
