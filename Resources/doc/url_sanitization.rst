@@ -1,7 +1,9 @@
 URL Sanitization
 ================
 
-The URL sanitization asserts that the param given in entry is correct syntaxically and can be read
+The URL sanitization asserts that the param given in entry is correct syntaxically and can be used. An URL is the basis to access at any resources from computer. When you open the file "C:\\Windows\system32\test.cnf" (windows case) or "/home/myaccount/test.cnf" (linux case), you attempt to access to the URL formated respectively "file:///C:/Windows/system32/test.cnf" and "file:///home/myaccount/test.cnf". The goal of sanitization is to see if the resources given as parameter are well-formed before the resource calling.
+
+After a (short, I promise !) introduction, we will see how simply sanitize our resources and manage its with error management.
 
 Introduction : What's an URL ?
 ------------------------------
