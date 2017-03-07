@@ -83,8 +83,41 @@ In this bundle, the production of errors is managed either a throwable exception
 
 two modes are availabled : "INFO" and "ERROR"
 
-* INFO : this mode store exception in a exception bag. The exceptions can be retrieved with method "getExceptions" on service manager
-* ERROR: this mode provide an UrlException at the first error detected 
+* INFO : this mode store exception in a exception bag. The exceptions can be retrieved with method "getErrors" on service manager
+* ERROR: this mode provide an UrlException at the first error detected. Try need to work with try/catch in this case
+
+=======
+example
+=======
+
+.. code-block:: php
+
+    /**
+     * in your controller with error mode at INFO
+     */
+    $um = $this->get('open-actu.url.manager');
+    $um->sanitize(null,'/path/subpath/filename.txt');
+    if($um->hasErrors())
+    {
+        foreach($um->getErrors() as $error)
+        {
+            echo $error->getMessage().' # '.$error->getCode();
+        }
+    }
+    
+    ...
+    /**
+     * in your controller with error mode at ERROR
+     */
+    $um = $this->get('open-actu.url.manager');
+    try
+    {
+        $um->sanitize(null,'/path/subpath/filename.txt');
+    }
+    catch(\Exception $e)
+    {
+    	echo $e->getMessage().'#'.$e->getCode();
+    }
 
 =================
 Scheme validation
