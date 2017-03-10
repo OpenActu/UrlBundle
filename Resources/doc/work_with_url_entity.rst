@@ -46,7 +46,7 @@ Suppose you want the entity MyLink as URL manager. You need to create 4 files fo
   namespace MyBundle\Entity;
   
   use Doctrine\ORM\Mapping as ORM;
-  use MyBundle\Entity\UrlResponseAnalyzer;
+  use OpenActu\UrlBundle\Entity\UrlResponseAnalyzer;
   /**
    * MyLinkResponse
    *
