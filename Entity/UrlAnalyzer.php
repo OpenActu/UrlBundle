@@ -22,6 +22,13 @@ abstract class UrlAnalyzer
     protected $id;
 
     /**
+     * @var boolean
+     * 
+     * @ORM\Column(name="accept_update",type="boolean",nullable=true)
+     */
+    protected $acceptUpdate=true;
+    
+    /**
      * @var string
      * 
      * @ORM\Column(name="request_error_message",type="string",nullable=true,length=255)
@@ -344,6 +351,32 @@ abstract class UrlAnalyzer
     {
         return $this->requestUri;
     }
+
+    /**
+     * Set acceptUpdate
+     *
+     * @param string $acceptUpdate
+     *
+     * @return UrlAnalyzer
+     */
+    public function setAcceptUpdate($acceptUpdate)
+    {
+        $this->acceptUpdate = $acceptUpdate;
+
+        return $this;
+    }
+
+    /**
+     * Get acceptUpdate
+     *
+     * @return string
+     */
+    public function getAcceptUpdate()
+    {
+        return $this->acceptUpdate;
+    }
+
+
 
     /**
      * Set requestQuery

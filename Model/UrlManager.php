@@ -319,7 +319,6 @@ class UrlManager
 		{
 			$parameters['query'] = $this->url->getQuery($urlEncode);
 			$parameters['fragment'] = $this->url->getFragment($urlEncode);
-			
 			$this->request->sendRequest($object,$this->url,$parameters);
 		}
 		catch(InvalidUrlException $e)

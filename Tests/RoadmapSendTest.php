@@ -2,8 +2,18 @@
 namespace OpenActu\UrlBundle\Tests;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use OpenActu\UrlBundle\Entity\LinkTest;
-//use OpenActu\UrlBundle\Tests\Entity\LinkResponseTest;
+/**
+ *   -------------------
+ *   |                 |
+ *   |  Configuration  |
+ *   |                 |
+ *   -------------------
+ *
+ *    write here the namespace URL you have declared
+ * 
+ */
+//use <YourBundle>\Entity\<YourUrlEntity>;
+
 class RoadmapSendTest extends KernelTestCase
 {
     private $container;
@@ -73,7 +83,12 @@ class RoadmapSendTest extends KernelTestCase
 		/**
 		 * sanitize area - first step to work
 		 */
-		$link = $um->sanitize(LinkTest::class,$data['url'],true);
+		/**
+                 * 	write here your Entity URL
+                 */
+		//$link = $um->sanitize(<YourUrlEntity>::class,$data['url'],true);
+		echo 'You must configure the roadmap in line '.__LINE__;
+		return;
 		# we push (this is not obligatory)
 //		$usm->push($link);
 
