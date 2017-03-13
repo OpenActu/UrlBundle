@@ -264,6 +264,15 @@ class UrlManager
 	}
 
 	/**
+	 *
+	 * @return string
+	 */
+	public function getUrlWithoutQueryNorFragment()
+	{
+		return $this->url->getUrlWithoutQueryNorFragment();
+	}
+
+	/**
 	 * get query
 	 *
          * @return string Query

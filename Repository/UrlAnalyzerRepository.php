@@ -10,4 +10,83 @@ namespace OpenActu\UrlBundle\Repository;
  */
 class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 {
+
+	
+	/**
+	 * Obtain the data analysis by request uri field
+	 *
+	 * @param string $url URL string
+	 * @return array
+	 */
+	public function getDatasByRequestUri($url)
+	{
+		$qb = $this->createQueryBuilder('a');
+		$this->getAggregationSelect($qb);
+		$this->getAggregationByRequestUri($qb,$url);
+		return $qb->getQuery()->getScalarResult();
+	}
+
+	/**
+	 * Obtain the data analysis by request uri without query nor fragment field
+	 *
+	 * @param string $url URL string
+	 * @return array
+	 */
+	public function getDatasByRequestUriWithoutQueryNorFragment($url)
+	{
+		$qb = $this->createQueryBuilder('a');
+		$this->getAggregationSelect($qb);
+		$this->getAggregationByRequestUriWithoutQueryNorFragment($qb,$url);
+		return $qb->getQuery()->getScalarResult();
+	}	
+
+	private function getAggregationByRequestUri($qb,$url)
+	{
+		$qb->groupBy('a.requestUri,a.httpCode');
+		$qb->where('a.requestUri = :url')->setParameter('url',$url);	
+	}
+
+	private function getAggregationByRequestUriWithoutQueryNorFragment($qb,$url)
+	{
+		$qb->groupBy('a.requestUriWithoutQueryAndFragment,a.httpCode');
+		$qb->where('a.requestUriWithoutQueryAndFragment = :url')->setParameter('url',$url);	
+	}
+	
+	private function getAggregationSelect($qb)
+	{
+		$qb
+			->select('
+				a.requestScheme,
+				a.requestHost,
+				a.requestSubdomain,
+				a.requestDomain,
+				a.requestTopLevelDomain,
+				a.requestFolder,
+				a.requestFilename,
+				a.requestFilenameExtension,
+				a.requestPath,
+				a.requestQuery,
+				a.requestFragment,
+				a.responseUrl,
+				a.contentType,
+				avg(a.headerSize) headerSize,
+				a.requestSize,
+				a.isDir,
+				a.permissions,
+				a.filetime,
+				a.sslVerifyResult,
+
+				a.httpCode,
+				avg(a.totalTime) totalTime,
+				avg(a.namelookupTime) namelookupTime, 
+				avg(a.connectTime) connectTime,
+				avg(a.pretransferTime) pretransferTime,
+				avg(a.sizeDownload) sizeDownload,
+				avg(a.speedDownload) speedDownload,
+				avg(a.downloadContentLength) downloadContentLength,
+				avg(a.starttransferTime) starttransferTime,
+				count(a.responseUrl) calls'
+			);
+	}
+	
 }

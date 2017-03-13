@@ -66,6 +66,13 @@ abstract class UrlAnalyzer
     /**
      * @var string
      *
+     * @ORM\Column(name="request_uri_without_query_and_fragment", type="text")
+     */
+    protected $requestUriWithoutQueryAndFragment;
+
+    /**
+     * @var string
+     *
      * @ORM\Column(name="request_scheme", type="string", nullable=false, length=20)
      */
     protected $requestScheme;
@@ -371,6 +378,30 @@ abstract class UrlAnalyzer
     public function getRequestUri()
     {
         return $this->requestUri;
+    }
+
+    /**
+     * Set requestUriWithoutQueryAndFragment
+     *
+     * @param string $requestUriWithoutQueryAndFragment
+     *
+     * @return UrlAnalyser
+     */
+    public function setRequestUriWithoutQueryAndFragment($requestUriWithoutQueryAndFragment)
+    {
+        $this->requestUriWithoutQueryAndFragment = $requestUriWithoutQueryAndFragment;
+
+        return $this;
+    }
+
+    /**
+     * Get requestUriWithoutQueryAndFragment
+     *
+     * @return string
+     */
+    public function getRequestUriWithoutQueryAndFragment()
+    {
+        return $this->requestUriWithoutQueryAndFragment;
     }
 
     /**

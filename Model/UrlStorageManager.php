@@ -46,7 +46,8 @@ class UrlStorageManager
 				// Remove old response if existing
 				if((null !== ($response = $entity->getResponse())) && (null !== $response->getId())){
 					$r_entity   = $em->getRepository($object->getResponseClass())->find($response->getId());
-					$em->remove($r_entity);
+					if(null !== $r_entity)
+						$em->remove($r_entity);
 				}		
 				$entity->setResponse($object->getResponse());	
 				$entity->setContentType($object->getContentType());
