@@ -26,6 +26,9 @@ class UrlManager
 	
 	const 	REQUEST_TIMEOUT		= 10;
 
+	const 	STATUS_CODE_SUCCESS	= 200;
+	const 	STATUS_CODE_FAILED	= 404;
+
 	private $url;
 	private $request;
 	private $container;

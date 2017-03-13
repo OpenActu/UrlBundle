@@ -77,6 +77,10 @@ class UrlStorageManager
 				$entity->setLocalPort($object->getLocalPort());
 				$entity->setStatus($object->getStatus());
 				$entity->setAcceptUpdate($object->getAcceptUpdate());
+				$entity->setRequestErrorMessage($object->getRequestErrorMessage());
+				$entity->setChildren($object->getChildren());
+				$entity->setPermissions($object->getPermissions());
+				$entity->setIsDir($object->getIsDir());
 			}			
 			$em->flush();		
 		}

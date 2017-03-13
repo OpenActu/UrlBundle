@@ -42,7 +42,7 @@ class Request
 		{
 			$config['method'] = self::$method;
 			$sender = new $protocolSender(self::$timeout);
-			$sender->sendRequest($object,$url,$parameters,$config);			
+			$sender->sendRequest($object,$url,$parameters,$config);
 		}
 		
 	}

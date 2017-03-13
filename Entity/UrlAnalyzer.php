@@ -22,12 +22,26 @@ abstract class UrlAnalyzer
     protected $id;
 
     /**
+     * @var array
+     *
+     * @ORM\Column(name="children", type="array", nullable=true)
+     */
+    private $children;
+
+    /**
      * @var boolean
      * 
      * @ORM\Column(name="accept_update",type="boolean",nullable=true)
      */
     protected $acceptUpdate=true;
     
+    /**
+     * @var boolean
+     *
+     * @ORM\Column(name="is_dir",type="boolean",nullable=true)
+     */
+    protected $isDir=false;
+
     /**
      * @var string
      * 
@@ -276,6 +290,13 @@ abstract class UrlAnalyzer
     /**
      * @var string
      *
+     * @ORM\Column(name="permissions", type="string", length=4, nullable=true)
+     */
+    protected $permissions=null;
+
+    /**
+     * @var string
+     *
      * @ORM\Column(name="primary_ip", type="string", length=30, nullable=true)
      */
     protected $primaryIp;
@@ -376,6 +397,29 @@ abstract class UrlAnalyzer
         return $this->acceptUpdate;
     }
 
+    /**
+     * Set isDir
+     *
+     * @param boolean $isDir
+     *
+     * @return UrlAnalyzer
+     */
+    public function setIsDir($isDir)
+    {
+        $this->isDir = $isDir;
+
+        return $this;
+    }
+
+    /**
+     * Get isDir
+     *
+     * @return boolean
+     */
+    public function getIsDir()
+    {
+        return $this->isDir;
+    }
 
 
     /**
@@ -931,6 +975,30 @@ abstract class UrlAnalyzer
     }
 
     /**
+     * Set permissions
+     *
+     * @param string $permissions
+     *
+     * @return UrlAnalyser
+     */
+    public function setPermissions($permissions)
+    {
+        $this->permissions = $permissions;
+
+        return $this;
+    }
+
+    /**
+     * Get permissions
+     *
+     * @return string
+     */
+    public function getPermissions()
+    {
+        return $this->permissions;
+    }
+
+    /**
      * Set primaryIp
      *
      * @param string $primaryIp
@@ -1362,6 +1430,30 @@ abstract class UrlAnalyzer
         return $this->createdAt;
     }
   
+    /**
+     * Set children
+     *
+     * @param array $children
+     *
+     * @return UrlAnalyzer
+     */
+    public function setChildren($children)
+    {
+        $this->children = $children;
+
+        return $this;
+    }
+
+    /**
+     * Get children
+     *
+     * @return array
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
     /**
      * @ORM\PrePersist
      */
