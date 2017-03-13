@@ -1113,6 +1113,20 @@ class Url
 			$this->getPath();
 	return $strict_url;
     }
+    
+    /**
+     * Get Url without path
+     *
+     * @return string Url component
+     */
+    public function getUrlWithoutPath()
+    {
+	$strict_url = $this->getScheme().
+			self::VAR_COLUMN.
+			self::VAR_PATH_ABEMPTY.
+			$this->getAuthority();
+	return $strict_url;
+    }
 
     /**
      * Check if the url given is equivalent to the target url

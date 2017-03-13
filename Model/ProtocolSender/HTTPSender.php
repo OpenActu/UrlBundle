@@ -24,6 +24,40 @@ class HTTPSender extends ProtocolSender implements ProtocolSenderInterface
 		}
 	}
 
+	/**
+	 * Get children from a current content
+ 	 *
+	 * It's the default search based on HTML analysis
+	 * @param string $content Content HTML
+	 * @return array of URL found
+	 */
+	private function getChildren(UrlAnalyzer &$object,Url &$url)
+	{
+		$output = array();
+		$content= "";
+		$prefix = $url->getUrlWithoutPath();
+		
+		if($object->getResponse() && ($content = $object->getResponse()->getContent()))
+		{
+			preg_match_all("/href=\"(?<url>[^\"]*)/",$content,$matches);
+
+			foreach($matches['url'] as $s_url)
+			{
+				if(substr($s_url,0,1) == '/')
+					$s_url = $prefix.$s_url;
+				
+				/**
+				 * filter on prefix
+				 */
+				$pos = strpos($s_url,$prefix);
+				if($pos === 0)
+					$output[] = $s_url;
+			}
+			$output = array_unique($output,SORT_STRING);
+		}
+		return $output;
+	}
+
 	public function sendRequest(UrlAnalyzer &$object,Url &$url,array $parameters,array $config=array())
 	{
 		$s_url 	= $url->getUrlWithoutQueryNorFragment();
@@ -107,6 +141,17 @@ class HTTPSender extends ProtocolSender implements ProtocolSenderInterface
 				$object->setResponse($response);
 			}
 			$response->setContent($return);
+			
+			/**
+			 * By default we search the children in the current URL
+			 * based on the HTML detection
+		 	 */	
+			if(strlen($return))
+			{
+				$children = $this->getChildren($object, $url);
+				$object->setChildren($children);
+			}
+
 		}
 	}
 }
