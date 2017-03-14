@@ -66,9 +66,9 @@ abstract class UrlAnalyzer
     /**
      * @var string
      *
-     * @ORM\Column(name="request_uri_without_query_and_fragment", type="text")
+     * @ORM\Column(name="request_uri_without_query_nor_fragment", type="text")
      */
-    protected $requestUriWithoutQueryAndFragment;
+    protected $requestUriWithoutQueryNorFragment;
 
     /**
      * @var string
@@ -381,27 +381,27 @@ abstract class UrlAnalyzer
     }
 
     /**
-     * Set requestUriWithoutQueryAndFragment
+     * Set requestUriWithoutQueryNorFragment
      *
-     * @param string $requestUriWithoutQueryAndFragment
+     * @param string $requestUriWithoutQueryNorFragment
      *
-     * @return UrlAnalyser
+     * @return UrlAnalyzer
      */
-    public function setRequestUriWithoutQueryAndFragment($requestUriWithoutQueryAndFragment)
+    public function setRequestUriWithoutQueryNorFragment($requestUriWithoutQueryNorFragment)
     {
-        $this->requestUriWithoutQueryAndFragment = $requestUriWithoutQueryAndFragment;
+        $this->requestUriWithoutQueryNorFragment = $requestUriWithoutQueryNorFragment;
 
         return $this;
     }
 
     /**
-     * Get requestUriWithoutQueryAndFragment
+     * Get requestUriWithoutQueryNorFragment
      *
      * @return string
      */
-    public function getRequestUriWithoutQueryAndFragment()
+    public function getRequestUriWithoutQueryNorFragment()
     {
-        return $this->requestUriWithoutQueryAndFragment;
+        return $this->requestUriWithoutQueryNorFragment;
     }
 
     /**

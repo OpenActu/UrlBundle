@@ -20,13 +20,12 @@ class UrlAnalyzerListener
 		$um->sanitize(null,$entity->getRequestUri());
 		
 		/**
-		 * update the response_uri_without_request_and_fragment
+		 * update the response_uri_without_request_nor_fragment
 		 */
-		$entity->setRequestUriWithoutQueryAndFragment($um->getUrlWithoutQueryNorFragment());
-		$usm->push($entity);
+		$entity->setRequestUriWithoutQueryNorFragment($um->getUrlWithoutQueryNorFragment());
 	}
 
-	public function postUpdate(LifecycleEventArgs $args)
+	public function preUpdate(LifecycleEventArgs $args)
 	{
 		$entity = $args->getObject();
 		if($entity instanceof UrlAnalyzer){
@@ -34,7 +33,7 @@ class UrlAnalyzerListener
 		}
 	}
 
-	public function postPersist(LifecycleEventArgs $args)
+	public function prePersist(LifecycleEventArgs $args)
 	{
 		$entity = $args->getObject();
 		if($entity instanceof UrlAnalyzer){
