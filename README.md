@@ -79,6 +79,47 @@ Finally, you must add a mapping type in the doctrine area (allways in 'app/confi
 
 Congratulation, you can use this bundle !
 
+# Use case
+
+Here is done the basic example use we can have with it. This works only if you check the required minimal configuration (entity creating ...) as explained in the next chapters.
+
+
+  ...
+  use MyBundle\MyLink;
+  ... 
+  $usm= $this->container->get('open-actu.url_storage.manager');		
+  $um = $this->container->get('open-actu.url.manager');
+  
+  // Configuration settings
+  $um->changePortMode('normal');
+  		
+  /**
+   * sanitize area - first step to work	 
+   */
+  $link = $um->sanitize(MyLink::class,"http://www.google.fr/");
+  		
+  # we push (this is not obligatory)
+  $usm->push($link);
+  
+  if(null !== $link && !$um->hasErrors())
+  {
+ 	/**
+	 * now we can send request and receive response
+	 */
+	$um->send($link);
+
+	/**
+	 * we said that the link can not be updated
+	 */
+	$link->setAcceptUpdate(true);
+
+	/**
+	 * we can store the object in database
+	 */
+	$usm->push($link);
+  			
+  }
+
 # Features
 
 The source of the documentation is stored in the `Resources/doc/` folder :
