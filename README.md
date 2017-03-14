@@ -126,4 +126,5 @@ Here is done the basic example use we can have with it. This works only if you c
 The source of the documentation is stored in the `Resources/doc/` folder :
 
 [sanitize url](https://github.com/OpenActu/UrlBundle/blob/master/Resources/doc/url_sanitization.rst)
+
 [working with url entity](https://github.com/OpenActu/UrlBundle/blob/master/Resources/doc/work_with_url_entity.rst)
