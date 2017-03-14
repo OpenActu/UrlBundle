@@ -90,3 +90,11 @@ Suppose you want use the entity MyLink as URL manager. You need to create 4 file
   class MyLinkResponseRepository extends \Doctrine\ORM\EntityRepository
   {
   }
+
+Now, you can build the model with the command line 
+  
+  php bin/console doctrine:schema:update --force
+
+---------
+First use
+---------
