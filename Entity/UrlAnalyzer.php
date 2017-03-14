@@ -34,7 +34,14 @@ abstract class UrlAnalyzer
      * @ORM\Column(name="accept_update",type="boolean",nullable=true)
      */
     protected $acceptUpdate=true;
-    
+
+    /**
+     * @var boolean
+     * 
+     * @ORM\Column(name="accept_purge_response",type="boolean",nullable=true)
+     */
+    protected $acceptPurgeResponse=false;
+
     /**
      * @var boolean
      *
@@ -55,6 +62,13 @@ abstract class UrlAnalyzer
      * @ORM\Column(name="created_at", type="datetime")
      */
     protected $createdAt;
+
+    /**
+     * @var datetime
+     * 
+     * @ORM\Column(name="updated_at", type="datetime",nullable=true)
+     */
+    protected $updatedAt;
 
     /**
      * @var string
@@ -426,6 +440,30 @@ abstract class UrlAnalyzer
     public function getAcceptUpdate()
     {
         return $this->acceptUpdate;
+    }
+
+    /**
+     * Set acceptPurgeResponse
+     *
+     * @param string $acceptPurgeResponse
+     *
+     * @return UrlAnalyzer
+     */
+    public function setAcceptPurgeResponse($acceptPurgeResponse)
+    {
+        $this->acceptPurgeResponse = $acceptPurgeResponse;
+
+        return $this;
+    }
+
+    /**
+     * Get acceptPurgeResponse
+     *
+     * @return string
+     */
+    public function getAcceptPurgeResponse()
+    {
+        return $this->acceptPurgeResponse;
     }
 
     /**
@@ -1460,6 +1498,30 @@ abstract class UrlAnalyzer
     {
         return $this->createdAt;
     }
+
+    /**
+     * Set updatedAt
+     *
+     * @param \DateTime $updatedAt
+     *
+     * @return UrlAnalyzer
+     */
+    public function setUpdatedAt($updatedAt)
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * Get updatedAt
+     *
+     * @return \DateTime
+     */
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
   
     /**
      * Set children
@@ -1496,6 +1558,17 @@ abstract class UrlAnalyzer
 	         */
 		$this->createdAt = new \DateTime();
 		
+    }
+
+    /**
+     * @ORM\PreUpdate
+     */
+    public function onPreUpdate(LifecycleEventArgs $event)
+    {
+		/**
+		 * updatedAt
+		 */
+		$this->updatedAt = new \DateTime();
     }
     
 }

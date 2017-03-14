@@ -68,6 +68,15 @@ Now you need to add the config url in the main config file 'app/config/config.ym
             protocol:
                 method: "get"
                 timeout: 10
+            # ==========================
+            # response management
+            # ==========================
+            response:
+            # purge the delay requirement according to the unit choose
+            # the unit accepted are SECOND, MINUTE, HOUR, DAY or MONTH
+                purge:
+                    delay: 1
+                    unit: hour
 
 Finally, you must add a mapping type in the doctrine area (allways in 'app/config/config.yml')
 

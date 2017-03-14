@@ -62,6 +62,26 @@ class Configuration implements ConfigurationInterface
 		    ->end()
 		  ->end()
                 ->end()
+		->arrayNode('response')
+		  ->children()
+		    ->arrayNode('purge')
+		      ->children()
+                        ->integerNode('delay')
+			->end()
+			->enumNode('unit')
+			  ->values(array(
+				UrlManager::PURGE_UNIT_SECOND,
+				UrlManager::PURGE_UNIT_MINUTE,
+				UrlManager::PURGE_UNIT_HOUR,
+				UrlManager::PURGE_UNIT_MONTH,
+				UrlManager::PURGE_UNIT_DAY
+				)
+			)
+			->end()
+		      ->end()
+		    ->end()
+		  ->end()
+		->end()
               ->end()
             ->end()
           ->end();

@@ -29,6 +29,12 @@ class UrlManager
 	const 	STATUS_CODE_SUCCESS	= 200;
 	const 	STATUS_CODE_FAILED	= 404;
 
+	const 	PURGE_UNIT_SECOND	= 'second';
+	const	PURGE_UNIT_MINUTE	= 'minute';
+	const	PURGE_UNIT_DAY		= 'day';
+	const 	PURGE_UNIT_HOUR		= 'hour';
+	const 	PURGE_UNIT_MONTH	= 'month';
+
 	private $url;
 	private $request;
 	private $container;
