@@ -83,7 +83,7 @@ Congratulation, you can use this bundle !
 
 Here is done the basic example use we can have with it. This works only if you check the required minimal configuration (entity creating ...) as explained in the next chapters.
 
-
+```sh
   ...
   use MyBundle\MyLink;
   ... 
@@ -119,6 +119,7 @@ Here is done the basic example use we can have with it. This works only if you c
 	$usm->push($link);
   			
   }
+```
 
 # Features
 
