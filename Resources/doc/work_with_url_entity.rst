@@ -12,6 +12,8 @@ Suppose you want use the entity MyLink as URL manager. You need to create 4 file
 
 * file YourBundle/Entity/MyLink.php
 
+This file is the master entity who store your crawling calls
+
 .. code-block:: php
 
   <?php
@@ -40,6 +42,8 @@ Suppose you want use the entity MyLink as URL manager. You need to create 4 file
 
 * file YourBundle/Entity/MyLinkResponse.php
 
+This file is the master entity who store the response of the master entity. There is a separation because this specific part can require some removing processes.
+ 
 .. code-block:: php
 
   <?php
@@ -98,3 +102,72 @@ Now, you can build the model with the command line
 ---------
 First use
 ---------
+
+We take the example in first chapter with the adding of URL entity.
+  
+.. code-block:: php
+  
+  ...
+  use MyBundle\Entity\MyLink;
+  ...
+  
+  /**
+   * in your controller with error mode at INFO
+   */
+  $um = $this->get('open-actu.url.manager');
+  $mylink = $um->sanitize(MyLink::class,'/path/subpath/filename.txt');
+  if($um->hasErrors())
+  {
+      foreach($um->getErrors() as $error)
+      {
+          echo $error->getMessage().' # '.$error->getCode();
+      }
+  }
+  echo $mylink->getScheme(); # getting scheme field
+  
+  The only changes are that we're adding a $mylink var and a "MyLink::class" as first arg in the sanitize function. This push the content of sanitize call into the MyLink entity.
+
+------------
+Extended use
+------------
+This is just a complete example to store automatically the URL entity. It's just done as information. The explain comes after.
+
+Execute this and show the database after. You will see the tables "my_link" and "my_link_response" with both a new line.
+
+.. code-block:: php
+
+  ...
+  use MyBundle\MyLink;
+  ... 
+  $usm= $this->container->get('open-actu.url_storage.manager');		
+  $um = $this->container->get('open-actu.url.manager');
+ 
+  // Configuration settings
+  $um->changePortMode('normal');
+		
+  /**
+   * sanitize area - first step to work	 
+   */
+  $link = $um->sanitize(MyLink::class,"http://www.google.fr/");
+		
+  # we push (this is not obligatory)
+  $usm->push($link);
+
+  if(null !== $link && !$um->hasErrors())
+  {
+ 	/**
+	 * now we can send request and receive response
+	 */
+	$um->send($link);
+
+	/**
+	 * we said that the link can not be updated
+	 */
+	$link->setAcceptUpdate(true);
+
+	/**
+	 * we can store the object in database
+	 */
+	$usm->push($link);
+			
+  }
