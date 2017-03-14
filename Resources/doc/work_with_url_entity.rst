@@ -124,8 +124,8 @@ We take the example in first chapter with the adding of URL entity.
       }
   }
   echo $mylink->getScheme(); # getting scheme field
-  
-  The only changes are that we're adding a $mylink var and a "MyLink::class" as first arg in the sanitize function. This push the content of sanitize call into the MyLink entity.
+
+The only changes are that we're adding a $mylink var and a "MyLink::class" as first arg in the sanitize function. This push the content of sanitize call into the MyLink entity.
 
 ------------
 Extended use
