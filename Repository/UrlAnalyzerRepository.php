@@ -2,6 +2,7 @@
 
 namespace OpenActu\UrlBundle\Repository;
 
+use OpenActu\UrlBundle\Model\UrlManager;
 /**
  * UrlAnalyzerRepository
  *
@@ -24,6 +25,43 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 		$this->getAggregationSelect($qb);
 		$this->getAggregationByRequestUri($qb,$url);
 		return $qb->getQuery()->getScalarResult();
+	}
+
+        /**
+  	 * Obtain the URL list who must be purged
+         *
+ 	 */
+	public function getEntitiesToBePurged($delay,$unit)
+	{
+		switch($unit)
+		{
+			case UrlManager::PURGE_UNIT_SECOND:
+				$str_interval='PT'.$delay.'S';
+				break;
+			case UrlManager::PURGE_UNIT_MINUTE:
+				$str_interval='PT'.$delay.'M';
+				break;
+			case UrlManager::PURGE_UNIT_DAY:
+				$str_interval='P'.$delay.'D';
+				break;
+			case UrlManager::PURGE_UNIT_HOUR:
+				$str_interval='PT'.$delay.'H';
+				break;
+			case UrlManager::PURGE_UNIT_MONTH:
+				$str_interval='P'.$delay.'M';
+				break;
+		}
+		
+		$date	= date_sub(new \DateTime(),new \DateInterval($str_interval));
+
+		$qb = $this
+			->createQueryBuilder('a')
+			->where('a.createdAt <= :date')
+			->andWhere('a.acceptPurgeResponse = :acceptPurgeResponse')
+			->andWhere('a.response IS NOT NULL')
+			->setParameter('date',$date)
+			->setParameter('acceptPurgeResponse',true);
+		return $qb->getQuery()->getResult();
 	}
 
 	/**

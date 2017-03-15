@@ -72,8 +72,10 @@ Now you need to add the config url in the main config file 'app/config/config.ym
             # response management
             # ==========================
             response:
-            # purge the delay requirement according to the unit choose
-            # the unit accepted are SECOND, MINUTE, HOUR, DAY or MONTH
+            # purge the delay requirement according to the unit choosen
+            # to process it, you need to add a cron with the calling of
+            # the command "open-actu:response:purge"
+            # the unit accepted are second, minute, hour, day or month
                 purge:
                     delay: 1
                     unit: hour
