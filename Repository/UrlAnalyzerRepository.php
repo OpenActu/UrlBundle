@@ -2,7 +2,9 @@
 
 namespace OpenActu\UrlBundle\Repository;
 
+use Doctrine\ORM\Query\ResultSetMapping;
 use OpenActu\UrlBundle\Model\UrlManager;
+use OpenActu\UrlBundle\Entity\UrlAnalyzer;
 /**
  * UrlAnalyzerRepository
  *
@@ -19,12 +21,98 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 	 * @param string $url URL string
 	 * @return array
 	 */
-	public function getDatasByRequestUri($url)
+	public function getEntitiesByAggregatedRequestUri($class, $segment='request_uri', $offset=0,$limit=10)
 	{
-		$qb = $this->createQueryBuilder('a');
-		$this->getAggregationSelect($qb);
-		$this->getAggregationByRequestUri($qb,$url);
-		return $qb->getQuery()->getScalarResult();
+		if($segment !== 'request_uri' && $segment !== 'request_uri_without_query_nor_fragment')
+			throw new \Exception('unknown segment ("'.$segment.'" given)');
+
+		$sql = 'SELECT 
+				max(b.id) id,
+				b.request_uri,
+				b.request_uri_without_query_nor_fragment,
+				avg(b.header_size) header_size,
+				b.http_code,
+				max(b.updated_at) updatedAt,
+				avg(b.total_time) totalTime,
+				avg(b.namelookup_time) namelookupTime, 
+				avg(b.connect_time) connectTime,
+				avg(b.pretransfer_time) pretransferTime,
+				avg(b.size_download) sizeDownload,
+				avg(b.speed_download) speedDownload,
+				avg(b.download_content_length) downloadContentLength,
+				avg(b.starttransfer_time) starttransferTime,
+				count(b.response_url) count
+			FROM(
+				SELECT 
+					a.request_uri,
+					a.request_uri_without_query_nor_fragment
+				FROM 
+					my_url a
+				GROUP BY 
+					a.'.$segment.'
+				ORDER BY 
+					a.created_at DESC
+				LIMIT '.$offset.','.$limit.'
+			) a1 
+			INNER JOIN 
+				my_url b 
+			ON 
+				b.'.$segment.' = a1.'.$segment.'
+			GROUP BY 
+				b.'.$segment.', 
+				b.http_code 
+			ORDER BY 
+				b.'.$segment.', 
+				b.http_code';
+
+		$rsm = new ResultSetMapping();
+		$qb = $this->_em->createNativeQuery($sql,$rsm);
+		$rsm->addScalarResult('id','id');
+		$rsm->addScalarResult('http_code','httpCode');
+		$rsm->addScalarResult('request_uri','request_uri');
+		$rsm->addScalarResult('request_uri_without_query_nor_fragment', 'request_uri_without_query_nor_fragment');		
+		$rsm->addScalarResult('count','count');		
+		$rsm->addScalarResult('sizeDownload','mediumSizeDownload');		
+		$rsm->addScalarResult('downloadContentLength','mediumDownloadContentLength');		
+		$rsm->addScalarResult('totalTime','mediumTotalTime');
+		$rsm->addScalarResult('updatedAt','lastUpdatedAt');		
+		$result = $qb->getScalarResult();
+		
+		$output = array();
+
+		foreach($result as $item)
+		{
+			$entity = new $class();
+			
+			if($entity instanceof UrlAnalyzer)
+			{
+				if($segment == 'request_uri')
+				{
+					$test = ($entity->getRequestUri() !== $item['request_uri']);
+				}
+				else
+				{
+					$test = ($entity->getRequestUriWithoutQueryNorFragment() !== $item['request_uri_without_query_nor_fragment']);
+				}
+
+				if(true === $test)
+				{
+					if($entity->getId())
+					{
+						$output[] = $entity;
+					}
+					$entity = $this->_em->getRepository($class)->find($item['id']);
+				}
+				$entity->addStatistic($item);			
+			}
+
+			if($entity->getId())
+			{
+				$output[] = $entity;
+			}
+
+		}
+		return $output;
 	}
 
         /**
@@ -62,69 +150,5 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 			->setParameter('date',$date)
 			->setParameter('acceptPurgeResponse',true);
 		return $qb->getQuery()->getResult();
-	}
-
-	/**
-	 * Obtain the data analysis by request uri without query nor fragment field
-	 *
-	 * @param string $url URL string
-	 * @return array
-	 */
-	public function getDatasByRequestUriWithoutQueryNorFragment($url)
-	{
-		$qb = $this->createQueryBuilder('a');
-		$this->getAggregationSelect($qb);
-		$this->getAggregationByRequestUriWithoutQueryNorFragment($qb,$url);
-		return $qb->getQuery()->getScalarResult();
 	}	
-
-	private function getAggregationByRequestUri($qb,$url)
-	{
-		$qb->groupBy('a.requestUri,a.httpCode');
-		$qb->where('a.requestUri = :url')->setParameter('url',$url);	
-	}
-
-	private function getAggregationByRequestUriWithoutQueryNorFragment($qb,$url)
-	{
-		$qb->groupBy('a.requestUriWithoutQueryAndFragment,a.httpCode');
-		$qb->where('a.requestUriWithoutQueryAndFragment = :url')->setParameter('url',$url);	
-	}
-	
-	private function getAggregationSelect($qb)
-	{
-		$qb
-			->select('
-				a.requestScheme,
-				a.requestHost,
-				a.requestSubdomain,
-				a.requestDomain,
-				a.requestTopLevelDomain,
-				a.requestFolder,
-				a.requestFilename,
-				a.requestFilenameExtension,
-				a.requestPath,
-				a.requestQuery,
-				a.requestFragment,
-				a.responseUrl,
-				a.contentType,
-				avg(a.headerSize) headerSize,
-				a.requestSize,
-				a.isDir,
-				a.permissions,
-				a.filetime,
-				a.sslVerifyResult,
-
-				a.httpCode,
-				avg(a.totalTime) totalTime,
-				avg(a.namelookupTime) namelookupTime, 
-				avg(a.connectTime) connectTime,
-				avg(a.pretransferTime) pretransferTime,
-				avg(a.sizeDownload) sizeDownload,
-				avg(a.speedDownload) speedDownload,
-				avg(a.downloadContentLength) downloadContentLength,
-				avg(a.starttransferTime) starttransferTime,
-				count(a.responseUrl) calls'
-			);
-	}
-	
 }

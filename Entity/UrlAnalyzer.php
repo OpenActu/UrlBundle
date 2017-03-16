@@ -355,10 +355,37 @@ abstract class UrlAnalyzer
      */
     protected $response;
 
+    /**
+     * Statitics information
+     */
+    protected $statistics = array();
+
     /** 
      * @ORM\Column(type="enumUrlAnalyzerStatus") 
      */
     private $status;
+
+    /**
+     * Get statistics
+     *
+     * @return array
+     */
+    public function getStatistics()
+    {
+ 	return $this->statistics;
+    }
+
+    /**
+     * Set statistics
+     *
+     * @param array $statistic
+     *
+     * @return UrlAnalyzer
+     */
+    public function addStatistic(array $statistic)
+    {
+	$this->statistics[] = $statistic;
+    }
 
     /**
      * Get id
