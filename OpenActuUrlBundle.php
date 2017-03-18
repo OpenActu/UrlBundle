@@ -18,6 +18,7 @@ class OpenActuUrlBundle extends Bundle
 		if(!Type::hasType('enumUrlAnalyzerStatus'))
 		{
 			Type::addType('enumUrlAnalyzerStatus', 'OpenActu\UrlBundle\DBAL\EnumUrlAnalyzerStatusType');
+			Type::addType('enumUrlAnalyzerPortMode', 'OpenActu\UrlBundle\DBAL\EnumUrlAnalyzerPortModeType');
 		}	
 	}
 

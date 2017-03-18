@@ -896,6 +896,16 @@ class Url
 	return ($tab && !empty($tab[$key])) ? $tab[$key] : null;
     }
 
+    /**
+     * Return the port mode
+     * 
+     * @return string|null value
+     */
+    public function getPortMode()
+    {
+        return self::$port_mode;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////
     //											//
     //				CUSTOM VALIDATORS					//

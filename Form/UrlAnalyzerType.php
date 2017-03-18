@@ -6,12 +6,17 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use OpenActu\UrlBundle\Entity\UrlAnalyzer;
+use OpenActu\UrlBundle\Model\UrlManager;
 class UrlAnalyzerType extends AbstractType
 {
     /**
@@ -20,9 +25,11 @@ class UrlAnalyzerType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
+		->add('classname',HiddenType::class,array('data' => UrlAnalyzer::class, 'mapped' => false))		
 		->add('acceptUpdate',CheckboxType::class, array('required' => false))
 		->add('acceptPurgeResponse',CheckboxType::class, array('required' => false))
 		->add('isDir',CheckboxType::class, array('disabled' => true))
+		->add('portMode',ChoiceType::class, array('disabled' => true,'choices' => array( UrlManager::PORT_MODE_NORMAL => UrlManager::PORT_MODE_NORMAL ,UrlManager::PORT_MODE_FORCED => UrlManager::PORT_MODE_FORCED, UrlManager::PORT_MODE_NONE => UrlManager::PORT_MODE_NONE)))
 		->add('requestErrorMessage',TextType::class, array('disabled' => true))
 		->add('createdAt',DateTimeType::class, array('disabled' => true))
 		->add('updatedAt',DateTimeType::class, array('disabled' => true))
@@ -66,7 +73,7 @@ class UrlAnalyzerType extends AbstractType
 		->add('primaryPort', IntegerType::class, array('disabled' => true))
 		->add('localIp', TextType::class, array('disabled' => true))
 		->add('localPort', IntegerType::class, array('disabled' => true))
-		
+		->add('reload', SubmitType::class, array('label' => 'reload url'))
 		//->add('response')
 		;
     }

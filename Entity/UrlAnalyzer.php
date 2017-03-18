@@ -366,6 +366,11 @@ abstract class UrlAnalyzer
     private $status;
 
     /**
+     * @ORM\Column(type="enumUrlAnalyzerPortMode")
+     */
+    private $portMode;
+
+    /**
      * Get statistics
      *
      * @return array
@@ -1478,6 +1483,30 @@ abstract class UrlAnalyzer
         return $this->status;
     }
     
+    /**
+     * Set port mode
+     *
+     * @param string $portMode
+     *
+     * @return UrlAnalyzer
+     */
+    public function setPortMode($portMode)
+    {
+        $this->portMode = $portMode;
+
+        return $this;
+    }
+
+    /**
+     * Get portMode
+     *
+     * @return string
+     */
+    public function getPortMode()
+    {
+        return $this->portMode;
+    }
+
     /**
      * Set request error message
      *

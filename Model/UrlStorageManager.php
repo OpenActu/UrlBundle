@@ -13,6 +13,19 @@ class UrlStorageManager
 	}
 	
 	/**
+	 *  Get item by Id
+	 *
+	 * @param integer $id Identifier
+	 * @param string $classname Class name
+	 */
+	public function getEntityByIdAndClassname($id, $classname)
+	{
+		$em = $this->container->get('doctrine.orm.entity_manager');
+		$repository = $em->getRepository($classname);
+		return $repository->find($id);
+	}
+
+	/**
 	 *  Push 
          *
 	 * @param UrlAnalyzer $object Url Entity
@@ -48,7 +61,8 @@ class UrlStorageManager
 					$r_entity   = $em->getRepository($object->getResponseClass())->find($response->getId());
 					if(null !== $r_entity)
 						$em->remove($r_entity);
-				}		
+				}
+		
 				$entity->setResponse($object->getResponse());	
 				$entity->setContentType($object->getContentType());
 				$entity->setHttpCode($object->getHttpCode());

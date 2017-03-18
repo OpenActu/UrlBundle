@@ -446,7 +446,8 @@ class UrlManager
 			$this->url->sanitize($url,$encodeURL);
 			if(null !== $object)
 			{			
-				$object->setRequestQuery($this->url->getQuery());
+				$object->setPortMode($this->url->getPortMode());
+                                $object->setRequestQuery($this->url->getQuery());
 				$object->setRequestFragment($this->url->getFragment());
 				$object->setRequestUri((string)$this->url);		
 				$object->setRequestScheme($this->url->getScheme());
