@@ -16,6 +16,7 @@ class UrlAnalyzerListener
 	{
 		
 		$um	= $this->container->get('open-actu.url.manager');
+		$um->changePortMode($entity->getPortMode());
 		$usm 	= $this->container->get('open-actu.url_storage.manager');
 		$um->sanitize(null,$entity->getRequestUri());
 		
