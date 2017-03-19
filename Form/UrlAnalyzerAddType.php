@@ -27,6 +27,7 @@ class UrlAnalyzerAddType extends AbstractType
         $builder
 		->add('classname',HiddenType::class,array('data' => UrlAnalyzer::class, 'mapped' => false))		
 		->add('acceptPurgeResponse',CheckboxType::class, array('required' => false))
+		->add('useUrlWithoutQueryNorFragment', CheckboxType::class,array('required' => false))
 		->add('encodeUrl',CheckboxType::class, array('required' => false, 'label' => 'encode url'))
 		->add('requestUri',TextType::class, array('disabled' => false))
 		->add('portMode',ChoiceType::class, array('disabled' => false,'choices' => array( UrlManager::PORT_MODE_NORMAL => UrlManager::PORT_MODE_NORMAL ,UrlManager::PORT_MODE_FORCED => UrlManager::PORT_MODE_FORCED, UrlManager::PORT_MODE_NONE => UrlManager::PORT_MODE_NONE)))

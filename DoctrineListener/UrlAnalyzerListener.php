@@ -24,6 +24,14 @@ class UrlAnalyzerListener
 		 * update the response_uri_without_request_nor_fragment
 		 */
 		$entity->setRequestUriWithoutQueryNorFragment($um->getUrlWithoutQueryNorFragment());
+
+		/**
+		 * update the response_uri_calculated
+		 */
+		if($entity->getUseUrlWithoutQueryNorFragment() === true)
+			$entity->setRequestUriCalculated($um->getUrlWithoutQueryNorFragment());
+		else
+			$entity->setRequestUriCalculated($entity->getRequestUri());
 	}
 
 	public function preUpdate(LifecycleEventArgs $args)

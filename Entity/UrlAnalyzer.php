@@ -87,6 +87,13 @@ abstract class UrlAnalyzer
     /**
      * @var string
      *
+     * @ORM\Column(name="request_uri_calculated",type="text")
+     */
+    protected $requestUriCalculated;
+
+    /**
+     * @var string
+     *
      * @ORM\Column(name="request_scheme", type="string", nullable=false, length=20)
      */
     protected $requestScheme;
@@ -358,6 +365,20 @@ abstract class UrlAnalyzer
     protected $localPort;
 
     /**
+     * @var int
+     *
+     * @ORM\Column(name="nb_children", type="integer", nullable=true)
+     */
+    protected $nbChildren;
+
+    /**
+     * @var bool
+     *
+     * @ORM\Column(name="use_url_without_query_nor_fragment", type="boolean",nullable=true)
+     */
+    protected $useUrlWithoutQueryNorFragment = true;
+
+    /**
      * @ORM\OneToOne(targetEntity="OpenActu\UrlBundle\Entity\UrlResponseAnalyzer", cascade={"all"})
      */
     protected $response;
@@ -458,6 +479,31 @@ abstract class UrlAnalyzer
     }
 
     /**
+     * Set requestUriCalculated
+     *
+     * @param string $requestUriCalculated
+     *
+     * @return UrlAnalyzer
+     */
+    public function setRequestUriCalculated($requestUriCalculated)
+    {
+        $this->requestUriCalculated = $requestUriCalculated;
+
+        return $this;
+    }
+
+
+    /**
+     * Get requestUriCalculated
+     *
+     * @return string
+     */
+    public function getRequestUriCalculated()
+    {
+        return $this->requestUriCalculated;
+    }
+
+    /**
      * Set acceptUpdate
      *
      * @param string $acceptUpdate
@@ -479,6 +525,30 @@ abstract class UrlAnalyzer
     public function getAcceptUpdate()
     {
         return $this->acceptUpdate;
+    }
+
+    /**
+     * Set nbChildren
+     *
+     * @param integer $nbChildren
+     *
+     * @return UrlAnalyzer
+     */
+    public function setNbChildren($nbChildren)
+    {
+        $this->nbChildren = $nbChildren;
+
+        return $this;
+    }
+
+    /**
+     * Get nbChildren
+     *
+     * @return integer
+     */
+    public function getNbChildren()
+    {
+        return $this->nbChildren;
     }
 
     /**
@@ -527,6 +597,30 @@ abstract class UrlAnalyzer
     public function getIsDir()
     {
         return $this->isDir;
+    }
+
+    /**
+     * Set useUrlWithoutQueryNorFragment
+     *
+     * @param boolean $useUrlWithoutQueryNorFragment
+     *
+     * @return UrlAnalyzer
+     */
+    public function setUseUrlWithoutQueryNorFragment($useUrlWithoutQueryNorFragment)
+    {
+        $this->useUrlWithoutQueryNorFragment = $useUrlWithoutQueryNorFragment;
+
+        return $this;
+    }
+
+    /**
+     * Get useUrlWithoutQueryNorFragment
+     *
+     * @return boolean
+     */
+    public function getUseUrlWithoutQueryNorFragment()
+    {
+        return $this->useUrlWithoutQueryNorFragment;
     }
 
 
@@ -1645,7 +1739,11 @@ abstract class UrlAnalyzer
 		 * createdAt
 	         */
 		$this->createdAt = new \DateTime();
-		
+
+		/**
+		 * nbChildren
+		 */
+		$this->nbChildren = count($this->getChildren());		
     }
 
     /**
@@ -1657,6 +1755,11 @@ abstract class UrlAnalyzer
 		 * updatedAt
 		 */
 		$this->updatedAt = new \DateTime();
+		
+		/**
+		 * nbChildren
+		 */
+		$this->nbChildren = count($this->getChildren());
     }
     
 }

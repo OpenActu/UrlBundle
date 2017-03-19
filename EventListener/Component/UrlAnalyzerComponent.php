@@ -32,15 +32,16 @@ class UrlAnalyzerComponent
 		$this->url_manager->reset();
 
 		$id = null;
-		$portMode	= isset($request['portMode']) ? $request['portMode'] : null;
-		$classname	= isset($request['classname']) ? $request['classname'] : null;
-		$requestUri	= isset($request['requestUri']) ? $request['requestUri'] : null;
-		$encodeUrl	= isset($request['encodeUrl']) ? $request['encodeUrl'] : true;
-		
+		$portMode			= isset($request['portMode']) ? $request['portMode'] : null;
+		$classname			= isset($request['classname']) ? $request['classname'] : null;
+		$requestUri			= isset($request['requestUri']) ? $request['requestUri'] : null;
+		$encodeUrl			= isset($request['encodeUrl']) ? $request['encodeUrl'] : true;
+		$useUrlWithoutQueryNorFragment	= isset($request['useUrlWithoutQueryNorFragment']) ? $request['useUrlWithoutQueryNorFragment'] : true;
 		if((null !== $classname) && (null !== $portMode))
 		{
 			$this->url_manager->changePortMode($portMode);
 			$entity = $this->url_manager->sanitize($classname,$requestUri,$encodeUrl);
+			$entity->setUseUrlWithoutQueryNorFragment($useUrlWithoutQueryNorFragment);
 			if(null !== $entity && !$this->url_manager->hasErrors())
 			{
 				$this->url_manager->send($entity);

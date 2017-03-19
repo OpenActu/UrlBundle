@@ -87,7 +87,7 @@ class UrlAnalyzerListener
 		$tab	 	= $request->request->all();
 		$is_url_analyzer= false;
 		$parameters	= array();
-			
+		
 		foreach($tab as $key => $subtab)
 		{
 			/**
