@@ -24,7 +24,8 @@ class UrlAnalyzerListener
 		$tab	 	= $request->request->all();
 		$is_url_analyzer= false;
 		$parameters	= array();
-		
+		$session 	= $request->getSession();
+
 		foreach($tab as $key => $subtab)
 		{
 			/**
@@ -44,7 +45,7 @@ class UrlAnalyzerListener
 			 * check if the call is to reload item
 			 *
 			 */
-			if($is_url_analyzer && isset($subtab['reload']))
+			if($is_url_analyzer && isset($subtab['__reload']))
 			{
 				/**
 				 * getting the id of the current URL item
@@ -60,7 +61,74 @@ class UrlAnalyzerListener
 					 * reload the current Url item
 					 *
 					 */
-					$this->component->reload($id,$classname);
+					$errors = array();
+					$this->component->reload($id,$classname,$errors);
+					
+					if(count($errors) > 0)
+					{
+						foreach($errors as $error)
+						{
+							$session->getFlashBag()->add('url_analyzer_errors', $error->getMessage());
+						}
+					}
+					elseif(count($errors) === 0)
+					{
+						$session->getFlashBag()->add('url_analyzer_reload_success', true);
+					}				
+				}
+			}			
+		}
+	}
+        
+        public function processAdd(FilterControllerEvent $event)
+	{
+		$kernel		= $event->getKernel();
+		$request 	= $event->getRequest();
+		$tab	 	= $request->request->all();
+		$is_url_analyzer= false;
+		$parameters	= array();
+			
+		foreach($tab as $key => $subtab)
+		{
+			/**
+			 * check if the source is from UrlAnalyzer ?
+			 *
+			 */
+			$classname = !empty($subtab['classname']) ? $subtab['classname'] : null;
+			if(null !== $classname)
+			{
+				$entity = new $classname();
+				$parent_classname = get_parent_class($entity);	
+				
+				$is_url_analyzer = ( $parent_classname === UrlAnalyzer::class );
+							
+			}
+			/**
+			 * check if the call is to add item
+			 *
+			 */
+			if($is_url_analyzer && isset($subtab['__add']))
+			{
+				/**
+				 * adding new item
+				 *
+				 * if id is returned, we have no error
+				 */
+				$errors = array();
+				$id = $this->component->add($subtab, $errors);
+				$session = $request->getSession();
+
+				if(null !== $id)
+				{
+					$request->request->set('id', $id);
+					$session->getFlashBag()->add('url_analyzer_add_success', true);
+				}
+				if(count($errors) > 0)
+				{
+					foreach($errors as $error)
+					{
+						$session->getFlashBag()->add('url_analyzer_errors', $error->getMessage());
+					}
 				}
 			}			
 		}

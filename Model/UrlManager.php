@@ -425,6 +425,15 @@ class UrlManager
 	}
 
 	/**
+	 * Add custom error message
+         *
+         */
+	public function addCustomError($message, $code)
+	{
+		$this->errors->add($message,$code);
+	}
+
+	/**
 	 * Sanitize an url
          *
          * The object is to validate the URL construct and optionnaly return the normalized well-formed URL

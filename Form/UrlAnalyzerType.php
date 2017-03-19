@@ -73,7 +73,7 @@ class UrlAnalyzerType extends AbstractType
 		->add('primaryPort', IntegerType::class, array('disabled' => true))
 		->add('localIp', TextType::class, array('disabled' => true))
 		->add('localPort', IntegerType::class, array('disabled' => true))
-		->add('reload', SubmitType::class, array('label' => 'reload url'))
+		->add('__reload', SubmitType::class, array('label' => 'reload url'))
 		//->add('response')
 		;
     }

@@ -23,27 +23,91 @@ class UrlAnalyzerComponent
 		$this->url_manager 		= $url_manager;
 	}		
 	
-	public function reload($id, $classname)
+	public function add($request, &$errors = array())
 	{
+		
+		/**
+		 * Purge of error messages
+		 */
+		$this->url_manager->reset();
+
+		$id = null;
+		$portMode	= isset($request['portMode']) ? $request['portMode'] : null;
+		$classname	= isset($request['classname']) ? $request['classname'] : null;
+		$requestUri	= isset($request['requestUri']) ? $request['requestUri'] : null;
+		$encodeUrl	= isset($request['encodeUrl']) ? $request['encodeUrl'] : true;
+		
+		if((null !== $classname) && (null !== $portMode))
+		{
+			$this->url_manager->changePortMode($portMode);
+			$entity = $this->url_manager->sanitize($classname,$requestUri,$encodeUrl);
+			if(null !== $entity && !$this->url_manager->hasErrors())
+			{
+				$this->url_manager->send($entity);
+				
+				if(!$this->url_manager->hasErrors())
+				{
+					/**
+					 * we said that the link can not be updated
+					 */
+					$entity->setAcceptUpdate(false);	
+				}
+				$this->url_storage_manager->push($entity);
+				$id = $entity->getId();
+			}
+			elseif(null !== $entity)
+			{
+				$this->url_storage_manager->push($entity);
+				$id = $entity->getId();
+			}
+			$errors = $this->url_manager->getErrors();
+		}
+		return $id;
+	}
+
+	public function reload($id, $classname,array &$errors = array())
+	{
+
+		/**
+		 * Purge of error messages
+		 */
+		$this->url_manager->reset();
+
 		$entity = $this->url_storage_manager->getEntityByIdAndClassname($id, $classname);
 		if(null !== $entity->getId())
 		{
 			$this->url_manager->changePortMode($entity->getPortMode());
-			if($entity->getAcceptUpdate())
+			
+			if($entity->getAcceptUpdate() === true)
 			{			
 				/**
 				 * entity reloading process
 				 *
 				 */
 				$entity = $this->url_manager->sanitize($classname,$entity->getRequestUri(),true);
-				$this->url_manager->send($entity);
-				$this->url_storage_manager->push($entity);
+				if(null !== $entity && !$this->url_manager->hasErrors())
+				{
+					$this->url_manager->send($entity);
+					
+					if(!$this->url_manager->hasErrors())
+					{
+					}
+					$this->url_storage_manager->push($entity);
+				}
+				elseif(null !== $entity)
+				{
+					$this->url_storage_manager->push($entity);
+				}
+				else
+				{
+					 $this->url_manager->addCustomError('can\'t not match the request uri with any existing item',999);
+				}
 			}
 			else
-			{
-				echo 'todo:'.__CLASS__.'@'.__LINE__;
-				die;
+			{	
+				$this->url_manager->addCustomError('accept update at false',999);		
 			}
 		}
+		$errors = $this->url_manager->getErrors();
 	}
 }

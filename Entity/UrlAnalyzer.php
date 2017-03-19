@@ -183,6 +183,13 @@ abstract class UrlAnalyzer
     protected $httpCode;
 
     /**
+     * @var boolean
+     *
+     * @ORM\Column(name="encode_url", type="boolean", nullable=true)
+     */
+    protected $encodeUrl;
+
+    /**
      * @var int
      *
      * @ORM\Column(name="header_size", type="integer", nullable=true)
@@ -1506,6 +1513,31 @@ abstract class UrlAnalyzer
     {
         return $this->portMode;
     }
+
+    /**
+     * Set encodeUrl
+     *
+     * @param string $encodeUrl
+     *
+     * @return UrlAnalyzer
+     */
+    public function setEncodeUrl($encodeUrl)
+    {
+        $this->encodeUrl = $encodeUrl;
+
+        return $this;
+    }
+
+    /**
+     * Get encodeUrl
+     *
+     * @return string
+     */
+    public function getEncodeUrl()
+    {
+        return $this->encodeUrl;
+    }
+
 
     /**
      * Set request error message
