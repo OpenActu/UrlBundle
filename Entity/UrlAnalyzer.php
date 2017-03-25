@@ -419,6 +419,18 @@ abstract class UrlAnalyzer
     {
 	$this->statistics[] = $statistic;
     }
+    
+    /**
+     * Set statistics
+     *
+     * @param array[] $statistics
+     *
+     * @return UrlAnalyzer
+     */
+    public function setStatistics(array $statistics)
+    {
+	$this->statistics = $statistics;
+    }
 
     /**
      * Get id

@@ -13,106 +13,148 @@ use OpenActu\UrlBundle\Entity\UrlAnalyzer;
  */
 class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 {
-
 	
-	/**
-	 * Obtain the data analysis by request uri field
-	 *
-	 * @param string $url URL string
-	 * @return array
-	 */
-	public function getEntitiesByAggregatedRequestUri($class, $segment='request_uri', $offset=0,$limit=10)
+	private function getCalculatedIds($qb)
 	{
-		if($segment !== 'request_uri' && $segment !== 'request_uri_without_query_nor_fragment')
-			throw new \Exception('unknown segment ("'.$segment.'" given)');
+		$qb
+		  ->select('max(a.id) id, a.requestUriCalculated')
+		 
+		  ->groupBy('a.requestUriCalculated')
+		  ->orderBy('a.createdAt');			
+	}
 
-		$sql = 'SELECT 
-				max(b.id) id,
-				b.request_uri,
-				b.request_uri_without_query_nor_fragment,
-				avg(b.header_size) header_size,
-				b.http_code,
-				max(b.updated_at) updatedAt,
-				avg(b.total_time) totalTime,
-				avg(b.namelookup_time) namelookupTime, 
-				avg(b.connect_time) connectTime,
-				avg(b.pretransfer_time) pretransferTime,
-				avg(b.size_download) sizeDownload,
-				avg(b.speed_download) speedDownload,
-				avg(b.download_content_length) downloadContentLength,
-				avg(b.starttransfer_time) starttransferTime,
-				count(b.response_url) count
-			FROM(
-				SELECT 
-					a.request_uri,
-					a.request_uri_without_query_nor_fragment
-				FROM 
-					my_url a
-				GROUP BY 
-					a.'.$segment.'
-				ORDER BY 
-					a.created_at DESC
-				LIMIT '.$offset.','.$limit.'
-			) a1 
-			INNER JOIN 
-				my_url b 
-			ON 
-				b.'.$segment.' = a1.'.$segment.'
-			GROUP BY 
-				b.'.$segment.', 
-				b.http_code 
-			ORDER BY 
-				b.'.$segment.', 
-				b.http_code';
-
-		$rsm = new ResultSetMapping();
-		$qb = $this->_em->createNativeQuery($sql,$rsm);
-		$rsm->addScalarResult('id','id');
-		$rsm->addScalarResult('http_code','httpCode');
-		$rsm->addScalarResult('request_uri','request_uri');
-		$rsm->addScalarResult('request_uri_without_query_nor_fragment', 'request_uri_without_query_nor_fragment');		
-		$rsm->addScalarResult('count','count');		
-		$rsm->addScalarResult('sizeDownload','mediumSizeDownload');		
-		$rsm->addScalarResult('downloadContentLength','mediumDownloadContentLength');		
-		$rsm->addScalarResult('totalTime','mediumTotalTime');
-		$rsm->addScalarResult('updatedAt','lastUpdatedAt');		
-		$result = $qb->getScalarResult();
-		
-		$output = array();
-
-		foreach($result as $item)
+	private function getCalculatedCount($qb)
+	{
+		$qb
+		  ->select('count(a)')
+		  ->groupBy('a.requestUriCalculated');	
+		$tab = $qb->getQuery()->getScalarResult();
+		print_r($tab);die;
+	}
+	/**
+	 * Obtain the data analyzis
+	 *
+	 * @param string $class Classname
+	 * @param integer $offset Offset
+	 * @param integer $limit Limit
+	 */
+	public function getQueryByAggregation($class,$page,$limit)
+	{
+		if(get_parent_class($class) === UrlAnalyzer::class)
 		{
-			$entity = new $class();
 			
-			if($entity instanceof UrlAnalyzer)
+			/**
+			 * first step - we found the last id 
+			 */
+			$table_name = $this->_em->getClassMetadata($class)->getTableName();
+
+			// items			
+			$rsm = new ResultSetMapping();
+			$sql = '
+			SELECT sql_calc_found_rows max(a.id) id,a.request_uri_calculated
+			FROM `'.$table_name.'` a
+			GROUP BY a.request_uri_calculated
+			ORDER BY a.created_at DESC
+			LIMIT '.(($page-1)*$limit).','.$limit;
+			$qb = $this->_em->createNativeQuery($sql,$rsm);
+			$rsm->addScalarResult('id','id');
+			$rsm->addScalarResult('request_uri_calculated','requestUriCalculated');
+			$items = $qb->getScalarResult();
+			
+			// count
+			$rsm = new ResultSetMapping();
+			$sql = 'SELECT FOUND_ROWS() cpt';
+			$qb = $this->_em->createNativeQuery($sql,$rsm);
+			$rsm->addScalarResult('cpt','cpt');
+			$count = $qb->getSingleScalarResult();
+			
+			$tmp = array();
+			$uris= array();
+			foreach($items as $item)
 			{
-				if($segment == 'request_uri')
-				{
-					$test = ($entity->getRequestUri() !== $item['request_uri']);
-				}
-				else
-				{
-					$test = ($entity->getRequestUriWithoutQueryNorFragment() !== $item['request_uri_without_query_nor_fragment']);
-				}
+				$tmp[]	= $item['id'];
+				$uris[]	= $item['requestUriCalculated'];			
+			}			
 
-				if(true === $test)
-				{
-					if($entity->getId())
-					{
-						$output[] = $entity;
-					}
-					$entity = $this->_em->getRepository($class)->find($item['id']);
-				}
-				$entity->addStatistic($item);			
-			}
-
-			if($entity->getId())
+			// get items	
+			$qb = $this->createQueryBuilder('a');
+			$qb
+			  ->select('a')
+			  ->where($qb->expr()->in('a.id',$tmp));
+			
+			$output['items'] = $qb->getQuery()->getResult();
+			$output['count'] = $count;
+			
+			/**
+			 * lock update from oldiest version
+			 *
+			 */
+			if(count($items) > 0) 
 			{
-				$output[] = $entity;
-			}
+				$conn = $this->_em->getConnection();
 
+				foreach($items as $item)
+				{					
+					
+					
+					$sql = 'UPDATE `'.$table_name.'` SET accept_update=0 WHERE request_uri_calculated = :requestUriCalculated AND id <> :id';
+					$conn->executeUpdate($sql,array(
+						':requestUriCalculated' => $item['requestUriCalculated'],
+						':id' => $item['id'])
+					);
+
+				}
+			}
+			
+			/**
+			 * add statistics data
+			 *
+			 */
+			if(count($output['items']) > 0)
+			{
+				foreach($output['items'] as $position => $item)
+				{
+					$sql ='
+					SELECT 
+					  avg(b.header_size) header_size,
+				          b.http_code,
+					  max(b.updated_at) updatedAt,
+					  avg(b.total_time) totalTime,
+					  avg(b.namelookup_time) namelookupTime, 
+					  avg(b.connect_time) connectTime,
+					  avg(b.pretransfer_time) pretransferTime,
+					  avg(b.size_download) sizeDownload,
+					  avg(b.speed_download) speedDownload,
+					  avg(b.download_content_length) downloadContentLength,
+					  avg(b.starttransfer_time) starttransferTime,
+					  count(b.response_url) count
+					FROM `'.$table_name.'` b 
+					WHERE b.request_uri_calculated = :requestUriCalculated
+					GROUP BY 
+					  b.request_uri_calculated, 
+					  b.http_code 
+					ORDER BY 
+	   				  b.http_code';
+					
+					$rsm = new ResultSetMapping();
+					$qb = $this->_em->createNativeQuery($sql,$rsm);
+					$qb->setParameter('requestUriCalculated', $item->getRequestUriCalculated());
+					$rsm->addScalarResult('http_code', 'httpCode');		
+					$rsm->addScalarResult('count', 'count');		
+					$rsm->addScalarResult('sizeDownload', 'mediumSizeDownload');		
+					$rsm->addScalarResult('downloadContentLength', 'mediumDownloadContentLength');		
+					$rsm->addScalarResult('totalTime', 'mediumTotalTime');
+					$statistics = $qb->getScalarResult();
+					
+					$item->setStatistics($statistics);
+				}
+			}
+			return $output;
 		}
-		return $output;
+		else
+		{
+			throw new \Exception('the current class '.$class.' is not supported');
+		}
 	}
 
         /**
