@@ -22,7 +22,21 @@ class UrlStorageManager
 	{
 		$em = $this->container->get('doctrine.orm.entity_manager');
 		$repository = $em->getRepository($classname);
-		return $repository->find($id);
+		if(null !== $id)
+			return $repository->find($id);
+		return null;
+	}
+
+	/**
+	 * Remove
+	 *
+	 * @param Object $object Url Entity
+	 */	
+	public function remove($object)
+	{
+		$em = $this->container->get('doctrine.orm.entity_manager');		
+		$em->remove($object);
+		$em->flush();
 	}
 
 	/**

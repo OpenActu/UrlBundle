@@ -66,6 +66,30 @@ class UrlAnalyzerComponent
 		return $id;
 	}
 
+	public function remove($id, $classname,array &$errors = array())
+	{
+		$entity = $this->url_storage_manager->getEntityByIdAndClassname($id, $classname);
+		if((null !== $entity) && (null !== $entity->getId()))
+		{
+			/**
+			 * Removing response
+			 *
+			 */
+			if($entity->getResponse() && $entity->getResponse()->getId())
+			{
+				$response = $this
+					->url_storage_manager
+					->getEntityByIdAndClassname(
+						$entity->getResponse()->getId(),
+						$entity->getResponseClass()
+					);
+				$this->url_storage_manager->remove($response);
+				$entity->setResponse(null);		
+			}
+			$this->url_storage_manager->remove($entity);
+		}
+	}
+
 	public function reload($id, $classname,array &$errors = array())
 	{
 

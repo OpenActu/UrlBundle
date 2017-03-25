@@ -80,6 +80,59 @@ class UrlAnalyzerListener
 		}
 	}
         
+        public function processRemove(FilterControllerEvent $event)
+	{
+		$id 		= null;
+		$classname	= null;
+		$errors		= array();
+
+		if($this->checkOrigin($event, '__remove', $id, $classname))
+		{
+			$this->component->remove($id, $classname, $errors);
+		}
+	}
+
+        private function checkOrigin(FilterControllerEvent $event, $target, &$id, &$classname)
+	{
+		$kernel		= $event->getKernel();
+		$request 	= $event->getRequest();
+		$tab	 	= $request->request->all();
+		$is_url_analyzer= false;
+		$parameters	= array();
+		
+		$id 		= null;
+		$classname	= null;
+
+		foreach($tab as $key => $subtab)
+		{
+			/**
+			 * check if the source is from UrlAnalyzer ?
+			 *
+			 */
+			$classname = !empty($subtab['classname']) ? $subtab['classname'] : null;
+			if(null !== $classname)
+			{
+				$entity = new $classname();
+				$parent_classname = get_parent_class($entity);	
+				
+				$is_url_analyzer = ( $parent_classname === UrlAnalyzer::class );
+							
+			}
+			/**
+			 * check if the call is searched
+			 *
+			 */
+			if($is_url_analyzer && isset($subtab[$target]))
+			{
+				$route_params 	= $event->getRequest()->attributes->get('_route_params');
+				$id		= !empty($route_params['id']) ? $route_params['id'] : null;
+				return true;
+			}
+		}
+		
+		return false;		
+	}
+
         public function processAdd(FilterControllerEvent $event)
 	{
 		$kernel		= $event->getKernel();

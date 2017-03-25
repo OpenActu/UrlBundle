@@ -22,6 +22,7 @@ services:
         tags:
           - { name: kernel.event_listener, event: kernel.controller, method: processReload }
           - { name: kernel.event_listener, event: kernel.controller, method: processAdd }
+          - { name: kernel.event_listener, event: kernel.controller, method: processRemove }
 
     open-actu.event_listener.component.url_analyzer:
         class: OpenActu\UrlBundle\EventListener\Component\UrlAnalyzerComponent
