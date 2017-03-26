@@ -22,7 +22,7 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 		  ->groupBy('a.requestUriCalculated')
 		  ->orderBy('a.createdAt');			
 	}
-
+	
 	private function getCalculatedCount($qb)
 	{
 		$qb
@@ -40,6 +40,8 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 	 */
 	public function getQueryByAggregation($class,$page,$limit)
 	{
+		$output = array('items' => array(), 'count' => 0);
+
 		if(get_parent_class($class) === UrlAnalyzer::class)
 		{
 			
@@ -70,6 +72,12 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 			
 			$tmp = array();
 			$uris= array();
+
+			if(count($items) === 0)
+			{
+				return $output;
+			}
+
 			foreach($items as $item)
 			{
 				$tmp[]	= $item['id'];

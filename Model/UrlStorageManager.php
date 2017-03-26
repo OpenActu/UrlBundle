@@ -13,6 +13,22 @@ class UrlStorageManager
 	}
 	
 	/**
+	 *  Get Objects with same url calculated
+	 *
+	 * @param integer $id Identifier
+	 * @param string $classname Class name
+	 */
+	public function getEntitiesCalculatedByRequestUriCalculatedAndClassname($request_uri_calculated, $classname)
+	{
+		$em = $this->container->get('doctrine.orm.entity_manager');
+		$repository = $em->getRepository($classname);
+		if(null !== $request_uri_calculated)
+			return $repository->findByRequestUriCalculated($request_uri_calculated);
+		return array();
+	}
+	
+	
+	/**
 	 *  Get item by Id
 	 *
 	 * @param integer $id Identifier

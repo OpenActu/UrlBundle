@@ -66,6 +66,24 @@ class UrlAnalyzerComponent
 		return $id;
 	}
 
+	public function removeAll($id, $classname, array &$errors = array())
+	{
+		$entity = $this->url_storage_manager->getEntityByIdAndClassname($id, $classname);
+		if((null !== $entity) && (null !== $entity->getId()))
+		{
+			$entities = $this->url_storage_manager
+			  ->getEntitiesCalculatedByRequestUriCalculatedAndClassname(
+			    $entity->getRequestUriCalculated(), 
+			    $classname
+			  );
+
+			foreach($entities as $entity)
+			{
+				$this->remove($entity->getId(), $classname, $errors);
+			}
+		}
+	}
+
 	public function remove($id, $classname,array &$errors = array())
 	{
 		$entity = $this->url_storage_manager->getEntityByIdAndClassname($id, $classname);

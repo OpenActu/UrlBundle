@@ -90,6 +90,10 @@ class UrlAnalyzerListener
 		{
 			$this->component->remove($id, $classname, $errors);
 		}
+		elseif($this->checkOrigin($event, '__remove_all', $id, $classname))
+		{
+			$this->component->removeAll($id, $classname, $errors);
+		}
 	}
 
         private function checkOrigin(FilterControllerEvent $event, $target, &$id, &$classname)
