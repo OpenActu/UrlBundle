@@ -53,14 +53,15 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 			// items			
 			$rsm = new ResultSetMapping();
 			$sql = '
-			SELECT sql_calc_found_rows max(a.id) id,a.request_uri_calculated
-			FROM `'.$table_name.'` a
-			GROUP BY a.request_uri_calculated
+			SELECT sql_calc_found_rows max(a.id) id,b.uri_calculated
+			FROM `'.$table_name.'` a 
+			INNER JOIN url_core_analyzer b ON a.core_id = b.id
+			GROUP BY b.uri_calculated
 			ORDER BY a.created_at DESC
 			LIMIT '.(($page-1)*$limit).','.$limit;
 			$qb = $this->_em->createNativeQuery($sql,$rsm);
 			$rsm->addScalarResult('id','id');
-			$rsm->addScalarResult('request_uri_calculated','requestUriCalculated');
+			$rsm->addScalarResult('uri_calculated','requestUriCalculated');
 			$items = $qb->getScalarResult();
 			
 			// count
@@ -105,7 +106,7 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 				{					
 					
 					
-					$sql = 'UPDATE `'.$table_name.'` SET accept_update=0 WHERE request_uri_calculated = :requestUriCalculated AND id <> :id';
+					$sql = 'UPDATE `'.$table_name.'` a,url_core_analyzer b SET a.accept_update=0 WHERE a.core_id = b.id and b.uri_calculated = :requestUriCalculated AND a.id <> :id';
 					$conn->executeUpdate($sql,array(
 						':requestUriCalculated' => $item['requestUriCalculated'],
 						':id' => $item['id'])
@@ -136,10 +137,12 @@ class UrlAnalyzerRepository extends \Doctrine\ORM\EntityRepository
 					  avg(b.download_content_length) downloadContentLength,
 					  avg(b.starttransfer_time) starttransferTime,
 					  count(b.response_url) count
-					FROM `'.$table_name.'` b 
-					WHERE b.request_uri_calculated = :requestUriCalculated
+					FROM `'.$table_name.'` b, url_core_analyzer z 
+					WHERE 
+					  z.uri_calculated = :requestUriCalculated AND
+					  z.id = b.core_id
 					GROUP BY 
-					  b.request_uri_calculated, 
+					  z.uri_calculated, 
 					  b.http_code 
 					ORDER BY 
 	   				  b.http_code';

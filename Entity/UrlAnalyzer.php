@@ -73,98 +73,84 @@ abstract class UrlAnalyzer
     /**
      * @var string
      *
-     * @ORM\Column(name="request_uri", type="text")
      */
     protected $requestUri;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_uri_without_query_nor_fragment", type="text")
      */
     protected $requestUriWithoutQueryNorFragment;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_uri_calculated",type="text")
      */
     protected $requestUriCalculated;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_scheme", type="string", nullable=false, length=20)
      */
     protected $requestScheme;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_host", type="string", nullable=true, length=255)
      */
     protected $requestHost;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_subdomain", type="string", nullable=true, length=100)
      */
     protected $requestSubdomain;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_domain", type="string", nullable=true, length=100)
      */
     protected $requestDomain;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_top_level_domain", type="string",nullable=true, length=20)
      */
     protected $requestTopLevelDomain;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_folder", type="string",nullable=true,length=255)
      */
     protected $requestFolder;
 
     /**
      * @var string
      * 
-     * @ORM\Column(name="request_filename", type="string",nullable=true,length=255)
      */
     protected $requestFilename;
     
     /**
      * @var string
      *
-     * @ORM\Column(name="request_filename_extension", type="string",nullable=true,length=20)
      */
     protected $requestFilenameExtension;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_path", type="string",nullable=true,length=255)
      */
     protected $requestPath;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_query", type="text", nullable=true)
      */
     protected $requestQuery;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="request_fragment", type="text", nullable=true)
      */
     protected $requestFragment;
 
@@ -382,6 +368,11 @@ abstract class UrlAnalyzer
      * @ORM\OneToOne(targetEntity="OpenActu\UrlBundle\Entity\UrlResponseAnalyzer", cascade={"all"})
      */
     protected $response;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="OpenActu\UrlBundle\Entity\UrlCoreAnalyzer",inversedBy="instances",cascade={"persist"})
+     */
+    protected $core;
 
     /**
      * Statitics information
@@ -1742,6 +1733,29 @@ abstract class UrlAnalyzer
     }
 
     /**
+     * Set Core
+     *
+     * @param \OpenActu\UrlBundle\Entity\UrlCoreAnalyzer $core
+     * @return UrlAnalyzer
+     */
+    public function setCore($core)
+    {
+	$this->core = $core;
+
+  	return $this;
+    }
+
+    /**
+     * Get Core
+     *
+     * @return UrlCoreAnalyzer
+     */
+    public function getCore()
+    {
+    	return $this->core;
+    }
+
+    /**
      * @ORM\PrePersist
      */
     public function onPrePersist(LifecycleEventArgs $event)
@@ -1755,7 +1769,8 @@ abstract class UrlAnalyzer
 		/**
 		 * nbChildren
 		 */
-		$this->nbChildren = count($this->getChildren());		
+		$this->nbChildren = count($this->getChildren());
+		
     }
 
     /**

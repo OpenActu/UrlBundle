@@ -53,6 +53,7 @@ class UrlAnalyzerComponent
 					 */
 					$entity->setAcceptUpdate(false);	
 				}
+
 				$this->url_storage_manager->push($entity);
 				$id = $entity->getId();
 			}

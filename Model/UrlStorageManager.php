@@ -21,12 +21,12 @@ class UrlStorageManager
 	public function getEntitiesCalculatedByRequestUriCalculatedAndClassname($request_uri_calculated, $classname)
 	{
 		$em = $this->container->get('doctrine.orm.entity_manager');
-		$repository = $em->getRepository($classname);
+		$repository = $em->getRepository('OpenActuUrlBundle:UrlCoreAnalyzer');
+		$output = array();
 		if(null !== $request_uri_calculated)
-			return $repository->findByRequestUriCalculated($request_uri_calculated);
-		return array();
+			$output = $repository->getInstances($classname, $request_uri_calculated);
+		return $output;
 	}
-	
 	
 	/**
 	 *  Get item by Id
@@ -67,12 +67,7 @@ class UrlStorageManager
 		
 		if( (null !== $object->getRequestUri()) )
 		{
-			$entity = $repository->findOneBy(
-				array(
-					'requestUri'   => $object->getRequestUri(),
-					'acceptUpdate' => true
-				)
-			);
+			$entity = $em->getRepository('OpenActuUrlBundle:UrlCoreAnalyzer')->getActiveInstance(get_class($object), $object->getRequestUri());
 
 			if(null === $entity)
 			{

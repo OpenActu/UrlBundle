@@ -3,6 +3,7 @@ namespace OpenActu\UrlBundle\DoctrineListener;
 
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use OpenActu\UrlBundle\Entity\UrlAnalyzer;
+use OpenActu\UrlBundle\Entity\UrlCoreAnalyzer;
 class UrlAnalyzerListener
 {
 	private $container;
@@ -32,6 +33,58 @@ class UrlAnalyzerListener
 			$entity->setRequestUriCalculated($um->getUrlWithoutQueryNorFragment());
 		else
 			$entity->setRequestUriCalculated($entity->getRequestUri());
+
+		/**
+		 * build core
+		 */
+		$em = $this->container->get('doctrine.orm.entity_manager');
+		$core = $em->getRepository('OpenActuUrlBundle:UrlCoreAnalyzer')
+		  ->findOneBy(
+		    array(
+			'uriCalculated' => $entity->getRequestUriCalculated(), 
+			'classname' => get_class($entity)
+		    )
+		  );
+		
+		if(null === $core)
+		{
+			$core = new UrlCoreAnalyzer();			
+			$core->setUriCalculated($entity->getRequestUriCalculated());
+			$core->setClassname(get_class($entity));
+			$core->setUri($entity->getRequestUri());
+			$core->setUriWithoutQueryNorFragment($entity->getRequestUriWithoutQueryNorFragment());
+			$core->setScheme($entity->getRequestScheme());
+			$core->setHost($entity->getRequestHost());
+			$core->setSubdomain($entity->getRequestSubdomain());
+			$core->setDomain($entity->getRequestDomain());
+			$core->setTopLevelDomain($entity->getRequestTopLevelDomain());
+			$core->setFolder($entity->getRequestFolder());
+			$core->setFilename($entity->getRequestFilename());
+			$core->setFilenameExtension($entity->getRequestFilenameExtension());
+			$core->setPath($entity->getRequestPath());
+			$core->setQuery($entity->getRequestQuery());
+			$core->setFragment($entity->getRequestFragment());
+		}
+		$entity->setCore($core);
+	}
+
+	private function loadRequestDatas(UrlAnalyzer $entity)
+	{
+		$core = $entity->getCore();
+		$entity->setRequestUriCalculated($core->getUriCalculated());
+		$entity->setRequestUri($core->getUri());
+		$entity->setRequestUriWithoutQueryNorFragment($core->getUriWithoutQueryNorFragment());
+		$entity->setRequestScheme($core->getScheme());
+		$entity->setRequestHost($core->getHost());
+		$entity->setRequestSubdomain($core->getSubdomain());
+		$entity->setRequestDomain($core->getDomain());
+		$entity->setRequestTopLevelDomain($core->getTopLevelDomain());
+		$entity->setRequestFolder($core->getFolder());
+		$entity->setRequestFilename($core->getFilename());
+		$entity->setRequestFilenameExtension($core->getFilenameExtension());
+		$entity->setRequestPath($core->getPath());
+		$entity->setRequestQuery($core->getQuery());
+		$entity->setRequestFragment($core->getFragment());
 	}
 
 	public function preUpdate(LifecycleEventArgs $args)
@@ -47,6 +100,14 @@ class UrlAnalyzerListener
 		$entity = $args->getObject();
 		if($entity instanceof UrlAnalyzer){
 			$this->updateResponseUriWithoutRequestNorFragment($entity);
+		}
+	}
+        
+        public function postLoad(LifecycleEventArgs $args)
+        {
+		$entity = $args->getObject();
+		if($entity instanceof UrlAnalyzer){
+			$this->loadRequestDatas($entity);
 		}
 	}
 }
