@@ -16,6 +16,13 @@ services:
           - { name: doctrine.event_listener, event: prePersist }
           - { name: doctrine.event_listener, event: postLoad }
 
+    open-actu.doctrine_listener.url_core_analyzer:
+        class: OpenActu\UrlBundle\DoctrineListener\UrlCoreAnalyzerListener
+        arguments:
+          - "@service_container"
+        tags:
+          - { name: doctrine.event_listener, event: postLoad }
+
     open-actu.event_listener.url_analyzer:
         class: OpenActu\UrlBundle\EventListener\UrlAnalyzerListener
         arguments:

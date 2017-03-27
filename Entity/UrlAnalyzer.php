@@ -360,7 +360,7 @@ abstract class UrlAnalyzer
     /**
      * @var bool
      *
-     * @ORM\Column(name="use_url_without_query_nor_fragment", type="boolean",nullable=true)
+     * @ORM\Column(name="use_url_without_query_nor_fragment", type="boolean", nullable=true)
      */
     protected $useUrlWithoutQueryNorFragment = true;
 
@@ -370,7 +370,7 @@ abstract class UrlAnalyzer
     protected $response;
 
     /**
-     * @ORM\ManyToOne(targetEntity="OpenActu\UrlBundle\Entity\UrlCoreAnalyzer",inversedBy="instances",cascade={"persist"})
+     * @ORM\ManyToOne(targetEntity="OpenActu\UrlBundle\Entity\UrlCoreAnalyzer", cascade={"persist"})
      */
     protected $core;
 
