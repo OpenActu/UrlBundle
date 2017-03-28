@@ -135,6 +135,13 @@ class UrlCoreAnalyzer
      */
     protected $createdAt;
 
+    /**
+     * @var datetime
+     *
+     * @ORM\Column(name="updated_at", type="datetime", nullable=true)
+     */
+    protected $updatedAt;
+
     protected $statistics=array();
     
     /**
@@ -580,4 +587,41 @@ class UrlCoreAnalyzer
 	
     }
 
+    /**
+     * @ORM\PreUpdate
+     */
+    public function onPreUpdate(LifecycleEventArgs $event)
+    {
+	
+		/**
+		 * updatedAt
+	         */
+		$this->updatedAt = new \DateTime();
+	
+    }
+
+
+    /**
+     * Set updatedAt
+     *
+     * @param \DateTime $updatedAt
+     *
+     * @return UrlCoreAnalyzer
+     */
+    public function setUpdatedAt($updatedAt)
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * Get updatedAt
+     *
+     * @return \DateTime
+     */
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
 }

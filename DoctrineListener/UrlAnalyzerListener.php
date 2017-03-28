@@ -14,8 +14,7 @@ class UrlAnalyzerListener
 	}
 	
 	private function updateResponseUriWithoutRequestNorFragment(UrlAnalyzer $entity)
-	{
-		
+	{			
 		$um	= $this->container->get('open-actu.url.manager');
 		$um->changePortMode($entity->getPortMode());
 		$usm 	= $this->container->get('open-actu.url_storage.manager');
