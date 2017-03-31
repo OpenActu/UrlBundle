@@ -1,4 +1,0 @@
-services:
-    open-actu.url.manager:
-        class: OpenActu\UrlBundle\Model\UrlManager
-        
